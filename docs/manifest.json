@@ -1,0 +1,834 @@
+{
+  "source": "https://docs.project-sylvanas.net",
+  "searchIndexUrl": "https://docs.project-sylvanas.net/search-index.json",
+  "frozenAt": "2026-10-30",
+  "generatedBy": "tools/fetch-docs.mjs",
+  "pages": [
+    {
+      "url": "/",
+      "file": "home.md",
+      "title": "👋 Welcome",
+      "channel": "html",
+      "sections": 3
+    },
+    {
+      "url": "/dev",
+      "file": "dev.md",
+      "title": "Getting Started",
+      "channel": "html",
+      "sections": 13
+    },
+    {
+      "url": "/dev/api/addons",
+      "file": "dev-api-addons.md",
+      "title": "Addon Integration Functions",
+      "channel": "html",
+      "sections": 82
+    },
+    {
+      "url": "/dev/api/assets-helper",
+      "file": "dev-api-assets-helper.md",
+      "title": "Assets Helper",
+      "channel": "html",
+      "sections": 15
+    },
+    {
+      "url": "/dev/api/auction-house",
+      "file": "dev-api-auction-house.md",
+      "title": "Auction House Functions",
+      "channel": "html",
+      "sections": 47
+    },
+    {
+      "url": "/dev/api/auto-attack-helper",
+      "file": "dev-api-auto-attack-helper.md",
+      "title": "Auto Attack Helper",
+      "channel": "html",
+      "sections": 11
+    },
+    {
+      "url": "/dev/api/buffs",
+      "file": "dev-api-buffs.md",
+      "title": "Buffs",
+      "channel": "html",
+      "sections": 7
+    },
+    {
+      "url": "/dev/api/color",
+      "file": "dev-api-color.md",
+      "title": "Lua Color Module Documentation",
+      "channel": "html",
+      "sections": 13
+    },
+    {
+      "url": "/dev/api/cooldown-tracker",
+      "file": "dev-api-cooldown-tracker.md",
+      "title": "Cooldown Tracker",
+      "channel": "html",
+      "sections": 19
+    },
+    {
+      "url": "/dev/api/coords-helper",
+      "file": "dev-api-coords-helper.md",
+      "title": "Coords Helper",
+      "channel": "html",
+      "sections": 12
+    },
+    {
+      "url": "/dev/api/core",
+      "file": "dev-api-core.md",
+      "title": "Core Functions",
+      "channel": "html",
+      "sections": 91
+    },
+    {
+      "url": "/dev/api/damage-meter",
+      "file": "dev-api-damage-meter.md",
+      "title": "Damage Meter Functions",
+      "channel": "html",
+      "sections": 8
+    },
+    {
+      "url": "/dev/api/delves",
+      "file": "dev-api-delves.md",
+      "title": "Delve Functions",
+      "channel": "html",
+      "sections": 8
+    },
+    {
+      "url": "/dev/api/dispel-external-filters",
+      "file": "dev-api-dispel-external-filters.md",
+      "title": "Dispel External Filters",
+      "channel": "html",
+      "sections": 20
+    },
+    {
+      "url": "/dev/api/enums",
+      "file": "dev-api-enums.md",
+      "title": "Enums",
+      "channel": "html",
+      "sections": 24
+    },
+    {
+      "url": "/dev/api/evade-helper",
+      "file": "dev-api-evade-helper.md",
+      "title": "Evade Helper",
+      "channel": "html",
+      "sections": 19
+    },
+    {
+      "url": "/dev/api/events",
+      "file": "dev-api-events.md",
+      "title": "Game Events",
+      "channel": "html",
+      "sections": 28
+    },
+    {
+      "url": "/dev/api/file-io",
+      "file": "dev-api-file-io.md",
+      "title": "File I/O Functions",
+      "channel": "html",
+      "sections": 28
+    },
+    {
+      "url": "/dev/api/fish-helper",
+      "file": "dev-api-fish-helper.md",
+      "title": "Fish Helper",
+      "channel": "html",
+      "sections": 16
+    },
+    {
+      "url": "/dev/api/game-object",
+      "file": "dev-api-game-object.md",
+      "title": "Game Object - Functions",
+      "channel": "html",
+      "sections": 132
+    },
+    {
+      "url": "/dev/api/game-object/examples",
+      "file": "dev-api-game-object-examples.md",
+      "title": "Game Object - Code Examples",
+      "channel": "html",
+      "sections": 7
+    },
+    {
+      "url": "/dev/api/game-ui",
+      "file": "dev-api-game-ui.md",
+      "title": "Game UI Functions",
+      "channel": "html",
+      "sections": 86
+    },
+    {
+      "url": "/dev/api/geometry",
+      "file": "dev-api-geometry.md",
+      "title": "Geometry",
+      "channel": "html",
+      "sections": 31
+    },
+    {
+      "url": "/dev/api/graphics",
+      "file": "dev-api-graphics.md",
+      "title": "Lua Graphics Module Documentation",
+      "channel": "html",
+      "sections": 77
+    },
+    {
+      "url": "/dev/api/graphics/notifications",
+      "file": "dev-api-graphics-notifications.md",
+      "title": "Lua Graphics - Notifications Documentation",
+      "channel": "html",
+      "sections": 13
+    },
+    {
+      "url": "/dev/api/icons-helper",
+      "file": "dev-api-icons-helper.md",
+      "title": "Icons Helper",
+      "channel": "html",
+      "sections": 17
+    },
+    {
+      "url": "/dev/api/input",
+      "file": "dev-api-input.md",
+      "title": "Input Functions and Spell Queue",
+      "channel": "html",
+      "sections": 116
+    },
+    {
+      "url": "/dev/api/kick-external-filters",
+      "file": "dev-api-kick-external-filters.md",
+      "title": "Kick External Filters",
+      "channel": "html",
+      "sections": 18
+    },
+    {
+      "url": "/dev/api/lfg-list",
+      "file": "dev-api-lfg-list.md",
+      "title": "LFG List Functions",
+      "channel": "html",
+      "sections": 15
+    },
+    {
+      "url": "/dev/api/login",
+      "file": "dev-api-login.md",
+      "title": "Login Functions",
+      "channel": "html",
+      "sections": 28
+    },
+    {
+      "url": "/dev/api/mail",
+      "file": "dev-api-mail.md",
+      "title": "Mail Functions",
+      "channel": "html",
+      "sections": 21
+    },
+    {
+      "url": "/dev/api/movement-handler",
+      "file": "dev-api-movement-handler.md",
+      "title": "Movement Handler",
+      "channel": "html",
+      "sections": 15
+    },
+    {
+      "url": "/dev/api/object-manager",
+      "file": "dev-api-object-manager.md",
+      "title": "Lua Object Manager",
+      "channel": "html",
+      "sections": 21
+    },
+    {
+      "url": "/dev/api/party",
+      "file": "dev-api-party.md",
+      "title": "Party Functions",
+      "channel": "html",
+      "sections": 4
+    },
+    {
+      "url": "/dev/api/pet-battle",
+      "file": "dev-api-pet-battle.md",
+      "title": "Pet Battle Functions",
+      "channel": "html",
+      "sections": 47
+    },
+    {
+      "url": "/dev/api/pet-handler",
+      "file": "dev-api-pet-handler.md",
+      "title": "Pet Handler",
+      "channel": "html",
+      "sections": 11
+    },
+    {
+      "url": "/dev/api/pet-stable",
+      "file": "dev-api-pet-stable.md",
+      "title": "Pet Stable Functions",
+      "channel": "html",
+      "sections": 16
+    },
+    {
+      "url": "/dev/api/plugin-helper",
+      "file": "dev-api-plugin-helper.md",
+      "title": "Plugin Helper",
+      "channel": "html",
+      "sections": 20
+    },
+    {
+      "url": "/dev/api/professions",
+      "file": "dev-api-professions.md",
+      "title": "Profession Functions",
+      "channel": "html",
+      "sections": 82
+    },
+    {
+      "url": "/dev/api/quests",
+      "file": "dev-api-quests.md",
+      "title": "Quest Functions",
+      "channel": "html",
+      "sections": 56
+    },
+    {
+      "url": "/dev/api/reputation",
+      "file": "dev-api-reputation.md",
+      "title": "Reputation Functions",
+      "channel": "html",
+      "sections": 11
+    },
+    {
+      "url": "/dev/api/sentinel-navigation",
+      "file": "dev-api-sentinel-navigation.md",
+      "title": "Sentinel Navigation",
+      "channel": "html",
+      "sections": 36
+    },
+    {
+      "url": "/dev/api/simple-movement",
+      "file": "dev-api-simple-movement.md",
+      "title": "Simple Movement",
+      "channel": "html",
+      "sections": 16
+    },
+    {
+      "url": "/dev/api/spell-helper",
+      "file": "dev-api-spell-helper.md",
+      "title": "Spell Helper",
+      "channel": "html",
+      "sections": 27
+    },
+    {
+      "url": "/dev/api/spell-sequence-helper",
+      "file": "dev-api-spell-sequence-helper.md",
+      "title": "Spell Sequence Helper",
+      "channel": "html",
+      "sections": 29
+    },
+    {
+      "url": "/dev/api/spellbook",
+      "file": "dev-api-spellbook.md",
+      "title": "Spell Book - Raw Functions",
+      "channel": "html",
+      "sections": 67
+    },
+    {
+      "url": "/dev/api/spellbook/helper",
+      "file": "dev-api-spellbook-helper.md",
+      "title": "Spell helper",
+      "channel": "html",
+      "sections": 13
+    },
+    {
+      "url": "/dev/api/ts-override-helper",
+      "file": "dev-api-ts-override-helper.md",
+      "title": "Target Selector Override Helper",
+      "channel": "html",
+      "sections": 23
+    },
+    {
+      "url": "/dev/api/ui",
+      "file": "dev-api-ui.md",
+      "title": "Menu",
+      "channel": "html",
+      "sections": 96
+    },
+    {
+      "url": "/dev/api/ui/control-panel",
+      "file": "dev-api-ui-control-panel.md",
+      "title": "Control Panel",
+      "channel": "html",
+      "sections": 12
+    },
+    {
+      "url": "/dev/api/ui/custom",
+      "file": "dev-api-ui-custom.md",
+      "title": "Custom UI",
+      "channel": "html",
+      "sections": 127
+    },
+    {
+      "url": "/dev/api/vector-2",
+      "file": "dev-api-vector-2.md",
+      "title": "Vector 2D",
+      "channel": "html",
+      "sections": 29
+    },
+    {
+      "url": "/dev/api/vector-3",
+      "file": "dev-api-vector-3.md",
+      "title": "Vector 3D",
+      "channel": "html",
+      "sections": 30
+    },
+    {
+      "url": "/dev/api/world",
+      "file": "dev-api-world.md",
+      "title": "World Functions",
+      "channel": "html",
+      "sections": 13
+    },
+    {
+      "url": "/dev/developer-program",
+      "file": "dev-developer-program.md",
+      "title": "Developer Program",
+      "channel": "html",
+      "sections": 7
+    },
+    {
+      "url": "/dev/examples/nav-follower",
+      "file": "dev-examples-nav-follower.md",
+      "title": "Nav Follower",
+      "channel": "html",
+      "sections": 16
+    },
+    {
+      "url": "/dev/examples/navmesh-playground",
+      "file": "dev-examples-navmesh-playground.md",
+      "title": "Map Click to Nav",
+      "channel": "html",
+      "sections": 16
+    },
+    {
+      "url": "/dev/examples/navmesh-playground-advanced",
+      "file": "dev-examples-navmesh-playground-advanced.md",
+      "title": "Map Click to Nav Advanced",
+      "channel": "html",
+      "sections": 18
+    },
+    {
+      "url": "/dev/examples/tbc-warlock-affliction",
+      "file": "dev-examples-tbc-warlock-affliction.md",
+      "title": "Spell Sequence Debugger",
+      "channel": "html",
+      "sections": 16
+    },
+    {
+      "url": "/dev/guides/custom-ui",
+      "file": "dev-guides-custom-ui.md",
+      "title": "Barney's Basic Guide (With examples) 🎯",
+      "channel": "html",
+      "sections": 13
+    },
+    {
+      "url": "/dev/guides/session-jwt",
+      "file": "dev-guides-session-jwt.md",
+      "title": "Verifying PS users (session JWT) 🔐",
+      "channel": "html",
+      "sections": 10
+    },
+    {
+      "url": "/dev/libraries",
+      "file": "dev-libraries.md",
+      "title": "External Libraries",
+      "channel": "html",
+      "sections": 14
+    },
+    {
+      "url": "/dev/libraries/izi",
+      "file": "dev-libraries-izi.md",
+      "title": "IZI - SDK",
+      "channel": "html",
+      "sections": 24
+    },
+    {
+      "url": "/dev/libraries/izi/callbacks",
+      "file": "dev-libraries-izi-callbacks.md",
+      "title": "IZI - Callbacks",
+      "channel": "html",
+      "sections": 16
+    },
+    {
+      "url": "/dev/libraries/izi/geometry",
+      "file": "dev-libraries-izi-geometry.md",
+      "title": "IZI - Geometry",
+      "channel": "html",
+      "sections": 12
+    },
+    {
+      "url": "/dev/libraries/izi/graphics",
+      "file": "dev-libraries-izi-graphics.md",
+      "title": "IZI - Graphics",
+      "channel": "html",
+      "sections": 19
+    },
+    {
+      "url": "/dev/libraries/izi/izi-items",
+      "file": "dev-libraries-izi-izi-items.md",
+      "title": "IZI - Item (izi_item)",
+      "channel": "html",
+      "sections": 28
+    },
+    {
+      "url": "/dev/libraries/izi/izi-object-extensions",
+      "file": "dev-libraries-izi-izi-object-extensions.md",
+      "title": "IZI - Game Object Extensions",
+      "channel": "html",
+      "sections": 198
+    },
+    {
+      "url": "/dev/libraries/izi/izi-spells",
+      "file": "dev-libraries-izi-izi-spells.md",
+      "title": "IZI - Spell (izi_spell)",
+      "channel": "html",
+      "sections": 51
+    },
+    {
+      "url": "/dev/libraries/izi/izi-spells-sequences",
+      "file": "dev-libraries-izi-izi-spells-sequences.md",
+      "title": "IZI - Spell Sequences",
+      "channel": "html",
+      "sections": 25
+    },
+    {
+      "url": "/dev/libraries/izi/maps",
+      "file": "dev-libraries-izi-maps.md",
+      "title": "IZI - Maps",
+      "channel": "html",
+      "sections": 9
+    },
+    {
+      "url": "/dev/libraries/izi/queue",
+      "file": "dev-libraries-izi-queue.md",
+      "title": "IZI - Queue",
+      "channel": "html",
+      "sections": 10
+    },
+    {
+      "url": "/dev/libraries/izi/types",
+      "file": "dev-libraries-izi-types.md",
+      "title": "IZI - Types",
+      "channel": "html",
+      "sections": 18
+    },
+    {
+      "url": "/dev/libraries/izi/units",
+      "file": "dev-libraries-izi-units.md",
+      "title": "IZI - Units",
+      "channel": "html",
+      "sections": 12
+    },
+    {
+      "url": "/dev/libraries/mini-libs/dungeons-helper",
+      "file": "dev-libraries-mini-libs-dungeons-helper.md",
+      "title": "Dungeons Helper",
+      "channel": "html",
+      "sections": 8
+    },
+    {
+      "url": "/dev/libraries/mini-libs/inventory-helper",
+      "file": "dev-libraries-mini-libs-inventory-helper.md",
+      "title": "Inventory Helper",
+      "channel": "html",
+      "sections": 12
+    },
+    {
+      "url": "/dev/libraries/mini-libs/pvp-helper",
+      "file": "dev-libraries-mini-libs-pvp-helper.md",
+      "title": "PvP Helper",
+      "channel": "html",
+      "sections": 30
+    },
+    {
+      "url": "/dev/libraries/mini-libs/pvp-ui",
+      "file": "dev-libraries-mini-libs-pvp-ui.md",
+      "title": "PvP UI",
+      "channel": "html",
+      "sections": 11
+    },
+    {
+      "url": "/dev/libraries/mini-libs/unit-helper",
+      "file": "dev-libraries-mini-libs-unit-helper.md",
+      "title": "Unit Helper",
+      "channel": "html",
+      "sections": 20
+    },
+    {
+      "url": "/dev/libraries/modules/combat-forecast",
+      "file": "dev-libraries-modules-combat-forecast.md",
+      "title": "Combat Forecast",
+      "channel": "html",
+      "sections": 11
+    },
+    {
+      "url": "/dev/libraries/modules/health-prediction",
+      "file": "dev-libraries-modules-health-prediction.md",
+      "title": "Health Prediction",
+      "channel": "html",
+      "sections": 6
+    },
+    {
+      "url": "/dev/libraries/modules/spell-prediction",
+      "file": "dev-libraries-modules-spell-prediction.md",
+      "title": "Spell Prediction",
+      "channel": "html",
+      "sections": 25
+    },
+    {
+      "url": "/dev/libraries/modules/target-selector",
+      "file": "dev-libraries-modules-target-selector.md",
+      "title": "Target Selector",
+      "channel": "html",
+      "sections": 6
+    },
+    {
+      "url": "/dev/modules/buff-manager",
+      "file": "dev-modules-buff-manager.md",
+      "title": "Buff Manager",
+      "channel": "html",
+      "sections": 15
+    },
+    {
+      "url": "/dev/modules/settings-manager",
+      "file": "dev-modules-settings-manager.md",
+      "title": "Settings Manager",
+      "channel": "html",
+      "sections": 11
+    },
+    {
+      "url": "/dev/modules/spell-queue",
+      "file": "dev-modules-spell-queue.md",
+      "title": "Spell Queue",
+      "channel": "html",
+      "sections": 31
+    },
+    {
+      "url": "/dev/private-server",
+      "file": "dev-private-server.md",
+      "title": "How to Use PS with Private Servers",
+      "channel": "html",
+      "sections": 26
+    },
+    {
+      "url": "/examples",
+      "file": "examples.md",
+      "title": "Examples",
+      "channel": "html",
+      "sections": 10
+    },
+    {
+      "url": "/examples/izi/assets-example-izi",
+      "file": "examples-izi-assets-example-izi.md",
+      "title": "Assets Playground Example (IZI SDK)",
+      "channel": "html",
+      "sections": 20
+    },
+    {
+      "url": "/examples/izi/auto-loot",
+      "file": "examples-izi-auto-loot.md",
+      "title": "Simple Auto Loot Plugin Example (IZI SDK)",
+      "channel": "html",
+      "sections": 33
+    },
+    {
+      "url": "/examples/izi/celestial-unholy-dk",
+      "file": "examples-izi-celestial-unholy-dk.md",
+      "title": "Celestial Unholy Death Knight Rotation (IZI SDK)",
+      "channel": "html",
+      "sections": 32
+    },
+    {
+      "url": "/examples/izi/fire-mage",
+      "file": "examples-izi-fire-mage.md",
+      "title": "Fire Mage Rotation Example (IZI SDK)",
+      "channel": "html",
+      "sections": 29
+    },
+    {
+      "url": "/examples/izi/icons-example-izi",
+      "file": "examples-izi-icons-example-izi.md",
+      "title": "Icons Playground Example (IZI SDK)",
+      "channel": "html",
+      "sections": 23
+    },
+    {
+      "url": "/examples/izi/map_playground",
+      "file": "examples-izi-map_playground.md",
+      "title": "Map Playground Example",
+      "channel": "html",
+      "sections": 21
+    },
+    {
+      "url": "/examples/legacy/assets-example",
+      "file": "examples-legacy-assets-example.md",
+      "title": "Assets Playground Example",
+      "channel": "html",
+      "sections": 21
+    },
+    {
+      "url": "/examples/legacy/fire-mage",
+      "file": "examples-legacy-fire-mage.md",
+      "title": "Fire Mage Rotation Example",
+      "channel": "html",
+      "sections": 28
+    },
+    {
+      "url": "/examples/legacy/icons-example",
+      "file": "examples-legacy-icons-example.md",
+      "title": "Icons Playground Example",
+      "channel": "html",
+      "sections": 23
+    },
+    {
+      "url": "/examples/legacy/object-esp",
+      "file": "examples-legacy-object-esp.md",
+      "title": "Object ESP Example",
+      "channel": "html",
+      "sections": 19
+    },
+    {
+      "url": "/examples/legacy/waypoint-recorder",
+      "file": "examples-legacy-waypoint-recorder.md",
+      "title": "Waypoint Recorder Example",
+      "channel": "html",
+      "sections": 22
+    },
+    {
+      "url": "/getting-started",
+      "file": "getting-started.md",
+      "title": "Introduction",
+      "channel": "html",
+      "sections": 12
+    },
+    {
+      "url": "/getting-started/botting-with-ps",
+      "file": "getting-started-botting-with-ps.md",
+      "title": "Botting with PS",
+      "channel": "html",
+      "sections": 13
+    },
+    {
+      "url": "/getting-started/common-issues",
+      "file": "getting-started-common-issues.md",
+      "title": "Common Issues",
+      "channel": "html",
+      "sections": 20
+    },
+    {
+      "url": "/getting-started/how-to-get-gold",
+      "file": "getting-started-how-to-get-gold.md",
+      "title": "How To Get Gold",
+      "channel": "html",
+      "sections": 11
+    },
+    {
+      "url": "/getting-started/intro",
+      "file": "getting-started-intro.md",
+      "title": "Introduction",
+      "channel": "html",
+      "sections": 12
+    },
+    {
+      "url": "/getting-started/multi-session-setup",
+      "file": "getting-started-multi-session-setup.md",
+      "title": "Multi-Session Setup",
+      "channel": "html",
+      "sections": 9
+    },
+    {
+      "url": "/getting-started/phone-hwid-setup",
+      "file": "getting-started-phone-hwid-setup.md",
+      "title": "Phone HWID Setup",
+      "channel": "html",
+      "sections": 11
+    },
+    {
+      "url": "/guides/stream-mode",
+      "file": "guides-stream-mode.md",
+      "title": "Stream Mode",
+      "channel": "html",
+      "sections": 19
+    },
+    {
+      "url": "/modules/combat-forecast",
+      "file": "modules-combat-forecast.md",
+      "title": "Combat Forecast",
+      "channel": "html",
+      "sections": 3
+    },
+    {
+      "url": "/modules/control-panel",
+      "file": "modules-control-panel.md",
+      "title": "Control Panel",
+      "channel": "html",
+      "sections": 3
+    },
+    {
+      "url": "/modules/health-prediction",
+      "file": "modules-health-prediction.md",
+      "title": "Health Prediction",
+      "channel": "html",
+      "sections": 5
+    },
+    {
+      "url": "/modules/menu",
+      "file": "modules-menu.md",
+      "title": "Menu",
+      "channel": "html",
+      "sections": 15
+    },
+    {
+      "url": "/modules/pvp-panel",
+      "file": "modules-pvp-panel.md",
+      "title": "PvP Panel (CC Panel)",
+      "channel": "html",
+      "sections": 9
+    },
+    {
+      "url": "/modules/spell-queue",
+      "file": "modules-spell-queue.md",
+      "title": "Spell Queue",
+      "channel": "html",
+      "sections": 4
+    },
+    {
+      "url": "/modules/target-selector",
+      "file": "modules-target-selector.md",
+      "title": "Target Selector",
+      "channel": "html",
+      "sections": 12
+    },
+    {
+      "url": "/modules/universal-kicks",
+      "file": "modules-universal-kicks.md",
+      "title": "Universal Kicks",
+      "channel": "html",
+      "sections": 9
+    },
+    {
+      "url": "/plugins/universal-dispels",
+      "file": "plugins-universal-dispels.md",
+      "title": "Universal Dispels",
+      "channel": "html",
+      "sections": 4
+    },
+    {
+      "url": "/plugins/universal-items",
+      "file": "plugins-universal-items.md",
+      "title": "Universal Items",
+      "channel": "html",
+      "sections": 10
+    },
+    {
+      "url": "/plugins/universal-racials",
+      "file": "plugins-universal-racials.md",
+      "title": "Universal Racials",
+      "channel": "html",
+      "sections": 4
+    }
+  ]
+}

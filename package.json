@@ -1,0 +1,55 @@
+{
+  "name": "mcp-sylvanas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server exposing the official Project Sylvanas developer documentation (docs.project-sylvanas.net): full-text search, section reading, API symbol table and availability notes.",
+  "main": "index.js",
+  "bin": {
+    "mcp-sylvanas": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "selftest": "node index.js --selftest",
+    "test": "node tools/protocol-test.mjs",
+    "fetch-docs": "node tools/fetch-docs.mjs",
+    "inspect": "node tools/inspect-symbols.mjs",
+    "preview": "node tools/preview.mjs",
+    "lint": "eslint ."
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "author": "Thomas C",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/minchaka27/mcp-sylvanas.git"
+  },
+  "homepage": "https://github.com/minchaka27/mcp-sylvanas#readme",
+  "bugs": {
+    "url": "https://github.com/minchaka27/mcp-sylvanas/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "project-sylvanas",
+    "wow",
+    "documentation",
+    "lua"
+  ],
+  "files": [
+    "index.js",
+    "lib/",
+    "docs/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.0"
+  }
+}

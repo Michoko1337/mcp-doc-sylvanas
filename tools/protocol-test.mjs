@@ -10,7 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const serverPath = path.resolve(here, "..", "index.js");
+const serverPath = path.resolve(here, "..", "dist", "index.js");
 
 const transport = new StdioClientTransport({
   command: process.execPath,
@@ -231,6 +231,13 @@ const idxText = idxRes.contents?.[0]?.text ?? "";
 check(
   "resources/read sylvanas://index",
   idxText.startsWith("{") && idxText.includes("frozenAt"),
+);
+
+const rawRes = await client.readResource({ uri: "sylvanas://raw/dev-api-core" });
+const rawText = rawRes.contents?.[0]?.text ?? "";
+check(
+  "resources/read sylvanas://raw/dev-api-core (template)",
+  rawText.length > 1000 && rawText === docText,
 );
 
 // --- Prompts ---

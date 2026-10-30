@@ -11,21 +11,24 @@ npm install
 npm test
 ```
 
-- Node.js ≥ 18 (ESM, no transpilation, no build step).
-- The only runtime dependency is `@modelcontextprotocol/sdk`; keep it that
-  way unless there is a strong reason not to.
+- Node.js ≥ 20 (ESM). Runtime code is TypeScript (strict) in `src/`, compiled
+  to `dist/` by `npm run build` (automatic on `npm install`).
+- The runtime dependencies are `@modelcontextprotocol/sdk` and `zod`; keep it
+  that way unless there is a strong reason not to.
 - Everything the server serves comes from `docs/pages/` — the index is
   rebuilt at every startup.
 
 ## Before opening a pull request
 
 ```bash
-npm test          # end-to-end protocol test (27 checks)
-npm run lint      # ESLint
+npm run build     # compile TypeScript to dist/
+npm run typecheck # strict type check
+npm run lint      # ESLint 10 + typescript-eslint
+npm test          # end-to-end protocol test (28 checks)
 npm run selftest  # quick offline smoke test
 ```
 
-All three must pass. CI runs the same on Node 18, 20 and 22.
+All must pass. CI runs the same on Node 20, 22 and 24.
 
 ## Refreshing the documentation corpus
 
@@ -51,4 +54,5 @@ where each form was seen. If the site contradicts an entry, fix the entry.
 - ES modules everywhere (`"type": "module"`); `node:` prefixed imports.
 - English throughout the codebase, including tool descriptions and messages.
 - Comments explain *why*, not *what*.
-- One tool per concern in `tools/`; runtime code lives in `lib/`.
+- One tool per concern in `tools/`; runtime code lives in `src/` (TypeScript,
+  strict mode — no `any`, no non-null assertions unless provably safe).

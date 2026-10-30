@@ -4,9 +4,11 @@
  * display keeps the original text.
  */
 
+import type { CodeBlock, MarkdownUnit, SymbolSet, WeightedTerm } from "./types.js";
+
 /** Lowercase + diacritics stripped. */
-export function normalize(text) {
-  return String(text ?? "")
+export function normalize(text: string): string {
+  return text
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
@@ -19,12 +21,12 @@ const TOKEN_RE = /[a-z0-9]+(?:_[a-z0-9]+)*/g;
  * A compound word ("cast_safe") yields its full term (weight 1) plus its
  * parts (weight 0.35) so stem searches still hit.
  */
-export function tokenizeWeighted(text) {
+export function tokenizeWeighted(text: string): WeightedTerm[] {
   const norm = normalize(text);
   const raw = norm.match(TOKEN_RE);
   if (!raw) return [];
-  const out = [];
-  const seen = new Set();
+  const out: WeightedTerm[] = [];
+  const seen = new Set<string>();
   for (const token of raw) {
     if (!seen.has(token)) {
       seen.add(token);
@@ -43,13 +45,13 @@ export function tokenizeWeighted(text) {
 }
 
 /** Flat token list (full terms + parts), for the inverted index. */
-export function tokenize(text) {
+export function tokenize(text: string): string[] {
   return tokenizeWeighted(text).map((t) => t.term);
 }
 
 /** Strips Markdown syntax, keeping the content (code stays readable). */
-export function stripMarkdown(md) {
-  return String(md ?? "")
+export function stripMarkdown(md: string): string {
+  return md
     .replace(/```[^\n]*\n?/g, "")
     .replace(/`([^`]*)`/g, "$1")
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
@@ -68,10 +70,10 @@ export function stripMarkdown(md) {
 }
 
 /** Code blocks of a markdown text: { lang, code, start, end }. */
-export function extractCodeBlocks(md) {
-  const blocks = [];
+export function extractCodeBlocks(md: string): CodeBlock[] {
+  const blocks: CodeBlock[] = [];
   const re = /```([A-Za-z0-9_+.-]*)\r?\n([\s\S]*?)```/g;
-  let m;
+  let m: RegExpExecArray | null;
   while ((m = re.exec(md)) !== null) {
     blocks.push({
       lang: (m[1] || "").trim(),
@@ -84,10 +86,10 @@ export function extractCodeBlocks(md) {
 }
 
 /** Inline code spans (`...`). */
-export function extractInlineCode(md) {
-  const out = [];
+export function extractInlineCode(md: string): string[] {
+  const out: string[] = [];
   const re = /`([^`\n]{2,120})`/g;
-  let m;
+  let m: RegExpExecArray | null;
   while ((m = re.exec(md)) !== null) out.push(m[1]);
   return out;
 }
@@ -98,7 +100,7 @@ const LUA_KEYWORDS = new Set([
   "break", "goto", "self", "print", "require", "pcall", "xpcall", "ipairs",
   "pairs", "type", "tostring", "tonumber", "table", "string", "math", "os", "io",
   "assert", "error", "select", "setmetatable", "getmetatable", "rawget", "rawset",
-  "unpack", "next", "load", "dofile", "collectgarbage", "tonumber",
+  "unpack", "next", "load", "dofile", "collectgarbage",
 ]);
 
 /** Symbols that are not APIs (grammatical false positives). */
@@ -125,11 +127,11 @@ const SEGMENT_BLACKLIST = new Set([
 ]);
 
 /** A dotted symbol is plausible when it does not look like a path. */
-function isPlausibleDotted(sym) {
+function isPlausibleDotted(sym: string): boolean {
   const segs = sym.toLowerCase().split(".");
   if (segs.length < 2) return false;
-  if (FILE_EXT.has(segs[segs.length - 1])) return false;
-  if (SEGMENT_BLACKLIST.has(segs[0])) return false;
+  if (FILE_EXT.has(segs[segs.length - 1]!)) return false;
+  if (SEGMENT_BLACKLIST.has(segs[0]!)) return false;
   if (segs.some((s) => s.length > 40)) return false;
   return true;
 }
@@ -139,14 +141,14 @@ function isPlausibleDotted(sym) {
  * - "core.spell_book.cast_safe": qualified API
  * - "cast_safe": method called with ":"
  */
-export function extractSymbolsFromCode(code) {
-  const dotted = new Map();
-  const methods = new Map();
+export function extractSymbolsFromCode(code: string): SymbolSet {
+  const dotted = new Map<string, string>();
+  const methods = new Map<string, string>();
 
-  let m;
+  let m: RegExpExecArray | null;
   DOTTED_RE.lastIndex = 0;
   while ((m = DOTTED_RE.exec(code)) !== null) {
-    const raw = m[1];
+    const raw = m[1]!;
     if (SYMBOL_STOPLIST.has(raw.toLowerCase())) continue;
     if (!isPlausibleDotted(raw)) continue;
     if (!dotted.has(raw)) dotted.set(raw, raw.toLowerCase());
@@ -154,7 +156,7 @@ export function extractSymbolsFromCode(code) {
 
   METHOD_RE.lastIndex = 0;
   while ((m = METHOD_RE.exec(code)) !== null) {
-    const name = m[1];
+    const name = m[1]!;
     const lower = name.toLowerCase();
     if (LUA_KEYWORDS.has(lower)) continue;
     if (name.length < 3) continue;
@@ -165,7 +167,7 @@ export function extractSymbolsFromCode(code) {
 }
 
 /** Symbols from an inline-code fragment (`...`): accepts `cast_safe` alone. */
-export function extractSymbolsFromInline(inline) {
+export function extractSymbolsFromInline(inline: string): SymbolSet {
   const found = extractSymbolsFromCode(inline);
   const dotted = new Set(found.dotted);
   const methods = new Set(found.methods);
@@ -174,7 +176,7 @@ export function extractSymbolsFromInline(inline) {
   // Signature headings like `get_spell_charge(spell_id)`: keep the bare
   // function name as a method.
   const call = /^([A-Za-z_][A-Za-z0-9_]*)\s*\([^)]*\)$/.exec(trimmed);
-  if (call) trimmed = call[1];
+  if (call) trimmed = call[1]!;
 
   if (
     /^[A-Za-z_][A-Za-z0-9_]*$/.test(trimmed) &&
@@ -188,12 +190,12 @@ export function extractSymbolsFromInline(inline) {
 }
 
 /** Splits a markdown into units: code blocks and prose lines. */
-export function scanMarkdownUnits(md) {
-  const lines = String(md ?? "").split(/\r?\n/);
-  const units = [];
+export function scanMarkdownUnits(md: string): MarkdownUnit[] {
+  const lines = md.split(/\r?\n/);
+  const units: MarkdownUnit[] = [];
   let inFence = false;
   let lang = "";
-  let buf = [];
+  let buf: string[] = [];
   let startNo = 0;
 
   lines.forEach((line, i) => {
@@ -201,7 +203,7 @@ export function scanMarkdownUnits(md) {
     if (fence) {
       if (!inFence) {
         inFence = true;
-        lang = fence[1].trim();
+        lang = fence[1]!.trim();
         buf = [];
         startNo = i + 1;
       } else {
@@ -236,9 +238,9 @@ export function scanMarkdownUnits(md) {
 }
 
 /** Symbols of a Markdown fragment: code blocks + inline code. */
-export function extractSymbolsFromMarkdown(md) {
-  const dotted = new Set();
-  const methods = new Set();
+export function extractSymbolsFromMarkdown(md: string): SymbolSet {
+  const dotted = new Set<string>();
+  const methods = new Set<string>();
 
   for (const block of extractCodeBlocks(md)) {
     const found = extractSymbolsFromCode(block.code);
@@ -256,19 +258,19 @@ export function extractSymbolsFromMarkdown(md) {
 }
 
 /** Splits a text into paragraphs. */
-export function paragraphs(md) {
-  return String(md ?? "")
+export function paragraphs(md: string): string[] {
+  return md
     .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter(Boolean);
 }
 
 /** Splits an overly long block at paragraph boundaries. */
-export function splitLongText(md, max = 2400) {
+export function splitLongText(md: string, max = 2400): string[] {
   const paras = paragraphs(md);
   if (!paras.length) return [md];
-  const out = [];
-  let buf = [];
+  const out: string[] = [];
+  let buf: string[] = [];
   let size = 0;
   for (const p of paras) {
     if (buf.length && size + p.length + 2 > max) {

@@ -1,10 +1,28 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+/**
+ * Package root, found by walking up from this file to the nearest
+ * package.json. Robust whatever the layout: source, compiled `dist/`,
+ * or a dependency nested in node_modules.
+ */
+function findPackageRoot(start: string): string {
+  let dir = path.resolve(start);
+  for (;;) {
+    if (fs.existsSync(path.join(dir, "package.json"))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      throw new Error(`package.json not found above ${start}`);
+    }
+    dir = parent;
+  }
+}
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 /** Root of the MCP server package. */
-export const SERVER_ROOT = path.resolve(here, "..");
+export const SERVER_ROOT = findPackageRoot(here);
 
 /**
  * Directory holding the Markdown corpus — one file per official docs page.

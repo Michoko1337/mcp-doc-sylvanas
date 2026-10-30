@@ -5,16 +5,16 @@
  *   node tools/preview.mjs api core.menu  # symbol lookup
  *   node tools/preview.mjs pitfalls       # curated notes
  */
-import { buildIndex } from "../lib/indexer.js";
-import { SearchIndex } from "../lib/search.js";
-import { extractInsights } from "../lib/insights.js";
-import { DOCS_DIR } from "../lib/paths.js";
+import { buildIndex } from "../dist/lib/indexer.js";
+import { SearchIndex } from "../dist/lib/search.js";
+import { extractInsights } from "../dist/lib/insights.js";
+import { DOCS_DIR } from "../dist/lib/paths.js";
 import {
   formatCoverage,
   formatPitfalls,
   formatSearchResults,
   formatApiResults,
-} from "../lib/format.js";
+} from "../dist/lib/format.js";
 
 const index = buildIndex(DOCS_DIR);
 const search = new SearchIndex(index.chunks);

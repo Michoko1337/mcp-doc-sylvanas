@@ -1,14 +1,26 @@
 /** Text rendering of tool results (compact, model-readable Markdown). */
 
-const truncate = (s, n) => (s.length > n ? `${s.slice(0, n)}…` : s);
+import type {
+  AvailabilityNote,
+  CorpusStats,
+  Doc,
+  Insights,
+  NamespaceMember,
+  OfficialPage,
+  SearchResult,
+  SymbolEntry,
+  SymbolOccurrence,
+} from "./types.js";
+
+const truncate = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n)}…` : s);
 
 const SOURCE = "https://docs.project-sylvanas.net";
 const CODE_FENCE = "```";
 
 /** Wraps a value in Markdown inline code. */
-const code = (s) => `\`${s}\``;
+const code = (s: string): string => `\`${s}\``;
 
-export function formatSearchResults(results, query) {
+export function formatSearchResults(results: SearchResult[], query: string): string {
   if (!results.length) {
     return `No results for "${query}".\n\nTip: sylvanas_api("function_name") for a precise function, sylvanas_list() for the page inventory.`;
   }
@@ -35,7 +47,11 @@ export function formatSearchResults(results, query) {
   return lines.join("\n");
 }
 
-export function formatRead(doc, body, { section = null, pages = [] } = {}) {
+export function formatRead(
+  doc: Doc,
+  body: string,
+  { section = null, pages = [] }: { section?: string | null; pages?: OfficialPage[] } = {},
+): string {
   const header = [
     `# ${doc.title}`,
     "",
@@ -48,25 +64,38 @@ export function formatRead(doc, body, { section = null, pages = [] } = {}) {
   return `${header.join("\n")}\n${body}`;
 }
 
-export function formatApiResults(query, { exact, related, methods, notesBySymbol = null }) {
+export function formatApiResults(
+  query: string,
+  {
+    exact,
+    related,
+    methods,
+    notesBySymbol = null,
+  }: {
+    exact: SymbolEntry[];
+    methods: SymbolEntry[];
+    related: SymbolEntry[];
+    notesBySymbol?: Map<string, AvailabilityNote[]> | null;
+  },
+): string {
   const lines = [`# API "${query}"`, ""];
 
   /** Notes attached to the symbol: from the chunk + any that mention it. */
-  const notesFor = (sym, occ) => {
-    const out = [];
-    const push = (n, where) => {
+  const notesFor = (sym: SymbolEntry, occ: SymbolOccurrence): { note: string; where: string }[] => {
+    const out: { note: string; where: string }[] = [];
+    const push = (n: string, where: string) => {
       if (!n) return;
       if (out.some((x) => x.note === n)) return;
       out.push({ note: n, where });
     };
-    for (const n of occ.notes ?? []) push(n, occ.file);
-    for (const entry of notesBySymbol?.get?.(sym.key) ?? notesBySymbol?.[sym.key] ?? []) {
+    for (const n of occ.notes) push(n, occ.file);
+    for (const entry of notesBySymbol?.get(sym.key) ?? []) {
       push(entry.note, entry.file);
     }
     return out;
   };
 
-  const pushCode = (codeText) => {
+  const pushCode = (codeText: string) => {
     lines.push("", `${CODE_FENCE}lua`, codeText.trimEnd(), CODE_FENCE);
   };
 
@@ -100,7 +129,7 @@ export function formatApiResults(query, { exact, related, methods, notesBySymbol
   if (methods.length) {
     lines.push(`## Matching methods — ${methods.length}`, "");
     for (const sym of methods) {
-      const occ = sym.occurrences[0];
+      const occ = sym.occurrences[0]!;
       lines.push(`- ${code(sym.display)} (${sym.count}×) — ${occ.file} › ${occ.headingPath.join(" › ")}`);
       if (occ.line) {
         lines.push(`  ${CODE_FENCE}lua`);
@@ -122,7 +151,7 @@ export function formatApiResults(query, { exact, related, methods, notesBySymbol
   if (related.length) {
     lines.push(`## Related symbols — ${related.length}`, "");
     for (const sym of related.slice(0, 20)) {
-      const occ = sym.occurrences[0];
+      const occ = sym.occurrences[0]!;
       lines.push(`- ${code(sym.display)} (${sym.count}×) — ${occ.file} › ${occ.headingPath.join(" › ")}`);
     }
     lines.push("");
@@ -137,7 +166,7 @@ export function formatApiResults(query, { exact, related, methods, notesBySymbol
   return lines.join("\n");
 }
 
-export function formatDocsList(documents) {
+export function formatDocsList(documents: Doc[]): string {
   const lines = [
     "# Project Sylvanas knowledge base",
     "",
@@ -153,7 +182,7 @@ export function formatDocsList(documents) {
   return lines.join("\n");
 }
 
-export function formatSections(doc) {
+export function formatSections(doc: Doc): string {
   const lines = [`# ${doc.title} — ${doc.file}`, "", `${doc.sections.length} sections.`, ""];
   doc.sections.forEach((s, i) => {
     lines.push(`${i + 1}. **${s.heading}** (lines ${s.lineStart + 1}–${s.lineEnd + 1})`);
@@ -163,7 +192,7 @@ export function formatSections(doc) {
   return lines.join("\n");
 }
 
-export function formatPages(pages) {
+export function formatPages(pages: OfficialPage[]): string {
   const lines = ["| Official page | File | Title |", "|---|---|---|"];
   for (const p of pages) {
     lines.push(`| ${code(p.page)} | ${p.docId ? code(p.docId) : "—"} | ${p.label || ""} |`);
@@ -171,7 +200,7 @@ export function formatPages(pages) {
   return lines.join("\n");
 }
 
-export function formatCoverage(pages, stats, frozenAt = null) {
+export function formatCoverage(pages: OfficialPage[], stats: CorpusStats, frozenAt: string | null = null): string {
   const lines = [
     "# Sylvanas documentation corpus",
     "",
@@ -202,7 +231,15 @@ export function formatCoverage(pages, stats, frozenAt = null) {
 /*  Symbol index by namespace                                          */
 /* ------------------------------------------------------------------ */
 
-export function formatSymbolsList({ namespaces, prefix, stats }) {
+export function formatSymbolsList({
+  namespaces,
+  prefix,
+  stats,
+}: {
+  namespaces: Map<string, NamespaceMember[]>;
+  prefix: string | null;
+  stats: CorpusStats;
+}): string {
   const lines = ["# API symbol index", ""];
 
   if (!prefix) {
@@ -249,7 +286,7 @@ export function formatSymbolsList({ namespaces, prefix, stats }) {
 /*  Availability notes                                                 */
 /* ------------------------------------------------------------------ */
 
-export function formatAvailability(notes, { query = null } = {}) {
+export function formatAvailability(notes: AvailabilityNote[], { query = null }: { query?: string | null } = {}): string {
   const lines = ["# Availability & version notes", ""];
 
   if (query) {
@@ -273,10 +310,10 @@ export function formatAvailability(notes, { query = null } = {}) {
     return lines.join("\n");
   }
 
-  const byFile = new Map();
+  const byFile = new Map<string, AvailabilityNote[]>();
   for (const n of notes) {
     if (!byFile.has(n.file)) byFile.set(n.file, []);
-    byFile.get(n.file).push(n);
+    byFile.get(n.file)!.push(n);
   }
 
   lines.push(
@@ -299,7 +336,7 @@ export function formatAvailability(notes, { query = null } = {}) {
   return lines.join("\n");
 }
 
-export function formatPitfalls(insights) {
+export function formatPitfalls(insights: Insights): string {
   const lines = ["# Pitfalls & golden rules — Project Sylvanas", ""];
 
   if (!insights.installed) {

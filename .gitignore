@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Compiled output (npm run build)
+dist/
+
 # Site cache used by tools/fetch-docs.mjs (regenerable)
 .cache/
 

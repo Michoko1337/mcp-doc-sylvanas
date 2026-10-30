@@ -13,6 +13,7 @@ import fs from "node:fs";
 
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
 import { DOCS_DIR } from "./lib/paths.js";
@@ -32,6 +33,7 @@ import {
   formatSections,
   formatSymbolsList,
 } from "./lib/format.js";
+import type { CorpusIndex, Doc, DocSection, OfficialPage } from "./lib/types.js";
 
 /* ------------------------------------------------------------------ */
 /*  Loading the corpus                                                 */
@@ -42,7 +44,7 @@ if (!fs.existsSync(DOCS_DIR)) {
   process.exit(1);
 }
 
-const index = buildIndex(DOCS_DIR);
+const index: CorpusIndex = buildIndex(DOCS_DIR);
 const search = new SearchIndex(index.chunks);
 const insights = extractInsights();
 
@@ -51,12 +53,12 @@ console.error(
     `${index.stats.chunks} chunks · ${index.stats.symbols} symbols`,
 );
 
-const rawCache = new Map();
-function readRaw(doc) {
+const rawCache = new Map<string, string>();
+function readRaw(doc: Doc): string {
   if (!rawCache.has(doc.id)) {
     rawCache.set(doc.id, fs.readFileSync(doc.fullPath, "utf8"));
   }
-  return rawCache.get(doc.id);
+  return rawCache.get(doc.id)!;
 }
 
 /* ------------------------------------------------------------------ */
@@ -64,7 +66,7 @@ function readRaw(doc) {
 /* ------------------------------------------------------------------ */
 
 /** Finds a page by id, file name, or (fuzzy) title. */
-function resolveDoc(query) {
+function resolveDoc(query: string): { doc: Doc | null; candidates: Doc[] } {
   const q = String(query ?? "").trim().toLowerCase().replace(/\.md$/, "");
   if (!q) return { doc: null, candidates: [] };
 
@@ -76,29 +78,29 @@ function resolveDoc(query) {
   const startsWith = index.documents.filter(
     (d) => d.id.toLowerCase() === q.split("-")[0] || d.file.toLowerCase().replace(/\.md$/, "").startsWith(q),
   );
-  if (startsWith.length === 1) return { doc: startsWith[0], candidates: [] };
+  if (startsWith.length === 1) return { doc: startsWith[0]!, candidates: [] };
   if (startsWith.length > 1) return { doc: null, candidates: startsWith };
 
   const slug = q.replace(/^\d{2}-/, "");
   const bySlug = index.documents.filter(
     (d) => d.file.toLowerCase().replace(/^\d{2}-/, "").replace(/\.md$/, "") === slug,
   );
-  if (bySlug.length === 1) return { doc: bySlug[0], candidates: [] };
+  if (bySlug.length === 1) return { doc: bySlug[0]!, candidates: [] };
 
   const byTitle = index.documents.filter(
     (d) => d.title.toLowerCase().includes(q) || d.file.toLowerCase().includes(q),
   );
-  if (byTitle.length === 1) return { doc: byTitle[0], candidates: [] };
+  if (byTitle.length === 1) return { doc: byTitle[0]!, candidates: [] };
 
   return { doc: null, candidates: byTitle };
 }
 
-function docPages(doc) {
+function docPages(doc: Doc): OfficialPage[] {
   return index.pages.filter((p) => p.docId === doc.id);
 }
 
 /** Finds a section of a page (exact title, contains, or numeric index). */
-function resolveSection(doc, sectionQuery) {
+function resolveSection(doc: Doc, sectionQuery: string): DocSection | null {
   const raw = String(sectionQuery ?? "").trim();
   if (!raw) return null;
 
@@ -113,19 +115,17 @@ function resolveSection(doc, sectionQuery) {
   if (exact) return exact;
 
   const contains = doc.sections.filter((s) => s.heading.toLowerCase().includes(lower));
-  if (contains.length) return contains[0];
+  if (contains.length) return contains[0]!;
 
   // Partial match on the heading path of chunks
-  const chunk = doc.chunks.find((c) =>
-    c.headingPath.some((h) => h.toLowerCase().includes(lower)),
-  );
+  const chunk = doc.chunks.find((c) => c.headingPath.some((h) => h.toLowerCase().includes(lower)));
   if (chunk) {
     return doc.sections.find((s) => s.heading === chunk.sectionTitle) ?? null;
   }
   return null;
 }
 
-function sectionBody(doc, section) {
+function sectionBody(doc: Doc, section: DocSection): string {
   const lines = readRaw(doc).split(/\r?\n/);
   return lines.slice(section.lineStart, section.lineEnd).join("\n").trim();
 }
@@ -149,8 +149,8 @@ const server = new McpServer(
   },
 );
 
-const text = (body) => ({ content: [{ type: "text", text: body }] });
-const fail = (body) => ({ content: [{ type: "text", text: body }], isError: true });
+const text = (body: string): CallToolResult => ({ content: [{ type: "text", text: body }] });
+const fail = (body: string): CallToolResult => ({ content: [{ type: "text", text: body }], isError: true });
 
 /* --- Full-text search ------------------------------------------------ */
 
@@ -180,7 +180,7 @@ server.registerTool(
         `Page not found: "${file}". Available pages: ${index.documents.map((d) => d.id).join(", ")}`,
       );
     }
-    const results = search.search(query, { limit: limit ?? 8, docId });
+    const results = search.search(query, { limit, docId });
     return text(formatSearchResults(results, query));
   },
 );
@@ -253,10 +253,10 @@ server.registerTool(
     const key = normalize(symbol);
     const { dotted, methods, suffix } = index.symbols;
 
-    const exact = dotted.has(key) ? [dotted.get(key)] : [];
-    const methodHits = methods.has(key) ? [methods.get(key)] : [];
+    const exact = dotted.has(key) ? [dotted.get(key)!] : [];
+    const methodHits = methods.has(key) ? [methods.get(key)!] : [];
 
-    const relatedKeys = new Set(suffix.get(key) || []);
+    const relatedKeys = new Set<string>(suffix.get(key) || []);
     for (const k of dotted.keys()) {
       if (k !== key && (k.startsWith(`${key}.`) || k.endsWith(`.${key}`))) {
         relatedKeys.add(k);
@@ -267,7 +267,7 @@ server.registerTool(
     }
     const related = [...relatedKeys]
       .map((k) => dotted.get(k) || methods.get(k))
-      .filter(Boolean);
+      .filter((s): s is NonNullable<typeof s> => Boolean(s));
 
     const body = formatApiResults(symbol, {
       exact: exact.map((s) => ({ ...s, occurrences: s.occurrences.slice(0, limit) })),
@@ -301,7 +301,7 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
-  async ({ prefix } = {}) => {
+  async ({ prefix }) => {
     const body = formatSymbolsList({
       namespaces: index.namespaces,
       prefix: prefix ?? null,
@@ -330,7 +330,7 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
-  async ({ query } = {}) => {
+  async ({ query }) => {
     return text(formatAvailability(index.availability, { query: query ?? null }));
   },
 );
@@ -525,8 +525,9 @@ server.registerResource(
     mimeType: "text/markdown",
   },
   async (uri, { id }) => {
-    const { doc } = resolveDoc(id);
-    if (!doc) throw new Error(`Unknown page: ${id}`);
+    const pageId = Array.isArray(id) ? id[0] ?? "" : id;
+    const { doc } = resolveDoc(pageId);
+    if (!doc) throw new Error(`Unknown page: ${pageId}`);
     return {
       contents: [{ uri: uri.href, mimeType: "text/markdown", text: readRaw(doc) }],
     };
@@ -585,7 +586,7 @@ server.registerPrompt(
 /*  Startup                                                            */
 /* ------------------------------------------------------------------ */
 
-async function main() {
+async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("[mcp-sylvanas] MCP server ready (stdio)");
@@ -594,7 +595,7 @@ async function main() {
 // Self-test mode: node index.js --selftest [query]
 if (process.argv.includes("--selftest")) {
   const query = process.argv.find((a) => !a.startsWith("--") && a !== process.argv[0] && a !== process.argv[1]);
-  const out = [];
+  const out: string[] = [];
   out.push(`# Self-test — ${index.stats.documents} pages, ${index.stats.chunks} chunks, ${index.stats.symbols} symbols`);
   out.push("");
   out.push("## Search \"cast_safe\"");
@@ -615,7 +616,7 @@ if (process.argv.includes("--selftest")) {
   }
   process.stdout.write(out.join("\n"));
 } else {
-  main().catch((err) => {
+  main().catch((err: unknown) => {
     console.error("[mcp-sylvanas] fatal error:", err);
     process.exit(1);
   });

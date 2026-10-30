@@ -1,14 +1,14 @@
 import js from "@eslint/js";
+import tseslint from "typescript-eslint";
 
-export default [
-  {
-    ignores: ["node_modules/", "docs/pages/", ".cache/", "raw/"],
-  },
+export default tseslint.config(
+  { ignores: ["node_modules/", "dist/", "docs/pages/", ".cache/", "raw/"] },
   js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     files: ["**/*.js", "**/*.mjs"],
     languageOptions: {
-      ecmaVersion: 2024,
+      ecmaVersion: "latest",
       sourceType: "module",
       globals: {
         console: "readonly",
@@ -17,8 +17,10 @@ export default [
         setTimeout: "readonly",
       },
     },
+  },
+  {
     rules: {
       "no-console": "off",
     },
   },
-];
+);

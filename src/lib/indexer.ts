@@ -13,38 +13,70 @@ import {
   splitLongText,
   stripMarkdown,
 } from "./text.js";
+import type {
+  AvailabilityNote,
+  CorpusIndex,
+  CorpusStats,
+  Doc,
+  DocChunk,
+  Manifest,
+  NamespaceMember,
+  OfficialPage,
+  SymbolEntry,
+  SymbolTables,
+} from "./types.js";
 
 const HEADING_RE = /^(#{1,6})\s+(.*)$/;
 
-const DOC_FILES = (docsDir) =>
-  fs
+/** A section while being parsed, before its end line is known. */
+interface RawSection {
+  heading: string;
+  level: number;
+  lineStart: number;
+  lineEnd: number;
+  lines: string[];
+}
+
+/** A symbol occurrence as found in the text, before being flattened. */
+interface RawOccurrence {
+  display: string;
+  chunk: DocChunk;
+  line: string;
+  lineNo: number;
+  code: string | null;
+  prose: string;
+}
+
+function docFiles(docsDir: string): string[] {
+  return fs
     .readdirSync(docsDir)
     .filter((f) => f.toLowerCase().endsWith(".md"))
     .sort((a, b) => a.localeCompare(b, "en"));
+}
 
 /** Splits a document into sections (any heading below the H1 title). */
-function splitSections(lines) {
-  const sections = [];
-  let current = null;
-  let title = null;
+function splitSections(lines: string[]): { title: string; sections: RawSection[] } {
+  const sections: RawSection[] = [];
+  let current: RawSection | null = null;
+  let title: string | null = null;
 
-  lines.forEach((line, i) => {
+  for (const [i, line] of lines.entries()) {
     const m = HEADING_RE.exec(line);
     if (m) {
-      const level = m[1].length;
+      const level = m[1]!.length;
       if (!title && level === 1) {
-        title = m[2].trim();
-        return;
+        title = m[2]!.trim();
+        continue;
       }
       if (current) {
         current.lineEnd = i;
         sections.push(current);
       }
-      current = { heading: m[2].trim(), level, lineStart: i, lines: [line] };
-      return;
+      current = { heading: m[2]!.trim(), level, lineStart: i, lineEnd: 0, lines: [line] };
+      continue;
     }
     if (current) current.lines.push(line);
-  });
+  }
 
   if (current) {
     current.lineEnd = lines.length;
@@ -54,23 +86,23 @@ function splitSections(lines) {
 }
 
 /** Splits a section into chunks (`###` boundaries first, then paragraphs). */
-function buildChunks(doc, section, seq) {
+function buildChunks(doc: Doc, section: RawSection, seq: { n: number }): DocChunk[] {
   const body = section.lines.slice(1);
-  const subs = [];
-  let current = { heading: null, lines: [] };
+  const subs: { heading: string | null; lines: string[] }[] = [];
+  let current = { heading: null as string | null, lines: [] as string[] };
 
   for (const line of body) {
     const m = /^(#{3,6})\s+(.*)$/.exec(line);
     if (m) {
       if (current.lines.length) subs.push(current);
-      current = { heading: m[2].trim(), lines: [line] };
+      current = { heading: m[2]!.trim(), lines: [line] };
     } else {
       current.lines.push(line);
     }
   }
   if (current.lines.length) subs.push(current);
 
-  const chunks = [];
+  const chunks: DocChunk[] = [];
   for (const sub of subs) {
     const text = sub.lines.join("\n").trim();
     if (!text) continue;
@@ -79,7 +111,7 @@ function buildChunks(doc, section, seq) {
 
     const parts = splitLongText(text, 2400);
     parts.forEach((part, i) => {
-      const chunk = {
+      chunks.push({
         id: `${doc.id}#${seq.n++}`,
         docId: doc.id,
         file: doc.file,
@@ -90,11 +122,10 @@ function buildChunks(doc, section, seq) {
         parts: parts.length,
         text: part,
         plain: stripMarkdown(part),
-      };
-      chunk.symbols = extractSymbolsFromMarkdown(part);
-      chunk.codeBlocks = extractCodeBlocks(part);
-      chunk.notes = availabilityNotes(part);
-      chunks.push(chunk);
+        symbols: extractSymbolsFromMarkdown(part),
+        codeBlocks: extractCodeBlocks(part),
+        notes: availabilityNotes(part),
+      });
     });
   }
   return chunks;
@@ -105,13 +136,13 @@ function buildChunks(doc, section, seq) {
 /* ------------------------------------------------------------------ */
 
 /** Parses one Markdown file of the corpus. */
-function parseDocument(file, raw, docsDir) {
+function parseDocument(file: string, raw: string, docsDir: string): Doc {
   const lines = raw.split(/\r?\n/);
   const { title, sections } = splitSections(lines);
   const idMatch = /^(\d{2})-/.exec(file);
-  const id = idMatch ? idMatch[1] : path.basename(file, ".md");
+  const id = idMatch ? idMatch[1]! : path.basename(file, ".md");
 
-  const doc = {
+  const doc: Doc = {
     id,
     file,
     path: file,
@@ -121,6 +152,7 @@ function parseDocument(file, raw, docsDir) {
     chunks: [],
     chars: raw.length,
     lines: lines.length,
+    pages: [],
   };
 
   const seq = { n: 0 };
@@ -144,10 +176,14 @@ function parseDocument(file, raw, docsDir) {
 /* ------------------------------------------------------------------ */
 
 /** Reads the corpus manifest, when the corpus ships one. */
-function readManifest() {
+function readManifest(): Manifest | null {
   if (!fs.existsSync(MANIFEST_FILE)) return null;
   try {
-    return JSON.parse(fs.readFileSync(MANIFEST_FILE, "utf8"));
+    const data: unknown = JSON.parse(fs.readFileSync(MANIFEST_FILE, "utf8"));
+    if (typeof data !== "object" || data === null) return null;
+    const manifest = data as Manifest;
+    if (!Array.isArray(manifest.pages)) return null;
+    return manifest;
   } catch {
     return null;
   }
@@ -157,7 +193,7 @@ function readManifest() {
  * Official page → corpus file map, straight from the manifest.
  * Returns [] when the corpus has no manifest (custom corpora).
  */
-function buildPageMap(manifest, documents) {
+function buildPageMap(manifest: Manifest | null, documents: Doc[]): OfficialPage[] {
   if (!manifest) return [];
   const idByFile = new Map(documents.map((d) => [d.file, d.id]));
 
@@ -174,9 +210,9 @@ function buildPageMap(manifest, documents) {
 /*  Symbol table                                                       */
 /* ------------------------------------------------------------------ */
 
-function buildSymbolTable(chunks) {
-  const dotted = new Map();
-  const methods = new Map();
+function buildSymbolTable(chunks: DocChunk[]): SymbolTables {
+  const dotted = new Map<string, SymbolEntry>();
+  const methods = new Map<string, SymbolEntry>();
 
   for (const chunk of chunks) {
     const units = scanMarkdownUnits(chunk.text);
@@ -188,7 +224,7 @@ function buildSymbolTable(chunks) {
           .slice(0, ui)
           .filter((u) => u.type === "prose" && u.text.trim())
           .slice(-2)
-          .map((u) => u.text.trim())
+          .map((u) => (u.type === "prose" ? u.text.trim() : ""))
           .join("\n\n");
 
         const lines = unit.code.split(/\r?\n/);
@@ -246,22 +282,22 @@ function buildSymbolTable(chunks) {
   }
 
   // Suffix index: "cast_safe" → ["core.spell_book.cast_safe", …]
-  const suffix = new Map();
+  const suffix = new Map<string, string[]>();
   for (const key of dotted.keys()) {
     const last = key.split(".").pop();
     if (!last) continue;
     if (!suffix.has(last)) suffix.set(last, []);
-    suffix.get(last).push(key);
+    suffix.get(last)!.push(key);
   }
 
   return { dotted, methods, suffix };
 }
 
-function pushSymbol(table, key, occurrence) {
+function pushSymbol(table: Map<string, SymbolEntry>, key: string, occurrence: RawOccurrence): void {
   if (!table.has(key)) {
     table.set(key, { key, display: occurrence.display, count: 0, occurrences: [] });
   }
-  const entry = table.get(key);
+  const entry = table.get(key)!;
   entry.count += 1;
   if (entry.occurrences.length < 60) {
     entry.occurrences.push({
@@ -288,10 +324,13 @@ function pushSymbol(table, key, occurrence) {
  * that is what lets `sylvanas_api("check_los")` surface the note about
  * `check_los` even when note and code live in different paragraphs.
  */
-function buildAvailability(chunks) {
-  const out = [];
-  const bySymbol = new Map();
-  const seen = new Set();
+function buildAvailability(chunks: DocChunk[]): {
+  notes: AvailabilityNote[];
+  bySymbol: Map<string, AvailabilityNote[]>;
+} {
+  const out: AvailabilityNote[] = [];
+  const bySymbol = new Map<string, AvailabilityNote[]>();
+  const seen = new Set<string>();
 
   for (const chunk of chunks) {
     if (!chunk.notes?.length) continue;
@@ -303,7 +342,7 @@ function buildAvailability(chunks) {
       seen.add(dedupeKey);
 
       const own = extractSymbolsFromMarkdown(note);
-      const entry = {
+      const entry: AvailabilityNote = {
         note,
         docId: chunk.docId,
         file: chunk.file,
@@ -318,7 +357,7 @@ function buildAvailability(chunks) {
       for (const key of [...own.dotted, ...own.methods]) {
         const k = key.toLowerCase();
         if (!bySymbol.has(k)) bySymbol.set(k, []);
-        bySymbol.get(k).push(entry);
+        bySymbol.get(k)!.push(entry);
       }
     }
   }
@@ -330,14 +369,14 @@ function buildAvailability(chunks) {
  * Symbols grouped by namespace: "core.spell_book" → its members.
  * That is the answer to "list the symbols of core.spell_book".
  */
-function buildNamespaces(symbols) {
-  const namespaces = new Map();
+function buildNamespaces(symbols: SymbolTables): Map<string, NamespaceMember[]> {
+  const namespaces = new Map<string, NamespaceMember[]>();
   for (const [key, entry] of symbols.dotted) {
     const parts = key.split(".");
     if (parts.length < 2) continue;
     const ns = parts.slice(0, -1).join(".");
     if (!namespaces.has(ns)) namespaces.set(ns, []);
-    namespaces.get(ns).push({ key, display: entry.display, count: entry.count });
+    namespaces.get(ns)!.push({ key, display: entry.display, count: entry.count });
   }
   for (const list of namespaces.values()) {
     list.sort((a, b) => a.key.localeCompare(b.key));
@@ -345,8 +384,9 @@ function buildNamespaces(symbols) {
   return namespaces;
 }
 
-export function buildIndex(docsDir) {
-  const files = DOC_FILES(docsDir);
+/** Builds the full corpus index: documents, chunks, symbols, notes, stats. */
+export function buildIndex(docsDir: string): CorpusIndex {
+  const files = docFiles(docsDir);
   const documents = files.map((file) =>
     parseDocument(file, fs.readFileSync(path.join(docsDir, file), "utf8"), docsDir),
   );
@@ -363,6 +403,17 @@ export function buildIndex(docsDir) {
     doc.pages = pages.filter((p) => p.docId === doc.id);
   }
 
+  const stats: CorpusStats = {
+    documents: documents.length,
+    sections: documents.reduce((n, d) => n + d.sections.length, 0),
+    chunks: chunks.length,
+    pages: pages.length,
+    symbols: symbols.dotted.size + symbols.methods.size,
+    namespaces: namespaces.size,
+    availabilityNotes: availability.notes.length,
+    chars: documents.reduce((n, d) => n + d.chars, 0),
+  };
+
   return {
     docsDir,
     manifest,
@@ -375,15 +426,6 @@ export function buildIndex(docsDir) {
     notesBySymbol: availability.bySymbol,
     frozenAt: manifest?.frozenAt ?? null,
     builtAt: new Date().toISOString(),
-    stats: {
-      documents: documents.length,
-      sections: documents.reduce((n, d) => n + d.sections.length, 0),
-      chunks: chunks.length,
-      pages: pages.length,
-      symbols: symbols.dotted.size + symbols.methods.size,
-      namespaces: namespaces.size,
-      availabilityNotes: availability.notes.length,
-      chars: documents.reduce((n, d) => n + d.chars, 0),
-    },
+    stats,
   };
 }

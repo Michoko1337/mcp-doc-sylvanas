@@ -38,8 +38,8 @@ const VERSION_CONTEXT =
   /\b(Retail|Classic|Forever|Titan|MoP|TBC|Vanilla|Wrath|Legion|BfA|Shadowlands|Dragonflight|private[- ]server|client|core)\b/i;
 
 /** Splits a body into sentences. */
-function sentences(text) {
-  return String(text ?? "")
+function sentences(text: string): string[] {
+  return text
     .replace(/\s+/g, " ")
     .trim()
     .split(/(?<=[.!])\s+(?=[A-Z“"])/);
@@ -49,14 +49,13 @@ function sentences(text) {
  * Availability sentences of a Markdown fragment. Fenced code is dropped
  * first: examples may repeat the wording, but the statement lives in prose.
  *
- * @param {string} markdown
- * @returns {string[]} sentences carrying an availability marker
+ * @returns sentences carrying an availability marker
  */
-export function availabilityNotes(markdown) {
-  const prose = stripMarkdown(String(markdown ?? "").replace(/```[\s\S]*?```/g, " "));
+export function availabilityNotes(markdown: string): string[] {
+  const prose = stripMarkdown(markdown.replace(/```[\s\S]*?```/g, " "));
   if (!prose) return [];
 
-  const hits = [];
+  const hits: string[] = [];
   for (const s of sentences(prose)) {
     if (!MARKERS.some((m) => m.test(s))) continue;
     if (!VERSION_CONTEXT.test(s)) continue;

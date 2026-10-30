@@ -1,60 +1,65 @@
 import fs from "node:fs";
 
 import { PITFALLS_FILE } from "./paths.js";
+import type { Contradiction, Insights } from "./types.js";
 
 const HEADING_RE = /^(#{1,6})\s+(.*)$/;
+
+interface RawSubSection {
+  heading: string;
+  body: string[];
+}
 
 /**
  * Sections of level 3 that live under a given level-2 heading.
  * Returns [{ heading, body }].
  */
-function subSectionsOf(md, titleMatcher) {
+function subSectionsOf(md: string, titleMatcher: RegExp): Contradiction[] {
   const lines = md.split(/\r?\n/);
-  const out = [];
+  const out: Contradiction[] = [];
   let inRegion = false;
-  let current = null;
+  let current: RawSubSection | null = null;
+
+  const flush = () => {
+    if (current) out.push({ heading: current.heading, body: current.body.join("\n").trim() });
+    current = null;
+  };
 
   for (const line of lines) {
     const h = HEADING_RE.exec(line);
     if (h) {
-      const level = h[1].length;
-      if (!inRegion && level === 2 && titleMatcher.test(h[2])) {
+      const level = h[1]!.length;
+      if (!inRegion && level === 2 && titleMatcher.test(h[2]!)) {
         inRegion = true;
         continue;
       }
       if (inRegion) {
         if (level <= 2) break; // end of the region
         if (level === 3) {
-          if (current) {
-            current.body = current.body.join("\n").trim();
-            out.push(current);
-          }
-          current = { heading: h[2].trim(), body: [] };
+          flush();
+          current = { heading: h[2]!.trim(), body: [] };
           continue;
         }
       }
     }
     if (inRegion && current) current.body.push(line);
   }
-  if (inRegion && current) {
-    current.body = current.body.join("\n").trim();
-    out.push(current);
-  }
+  flush();
   return out;
 }
 
 /** Bullet or numbered list under a level-2 heading, continuations folded in. */
-function listItems(md, headingMatcher) {
+function listItems(md: string, headingMatcher: RegExp): string[] {
   const lines = md.split(/\r?\n/);
-  const items = [];
+  const items: string[] = [];
   let inRegion = false;
-  let current = null;
+  let current: string | null = null;
 
   for (const line of lines) {
     const h = HEADING_RE.exec(line);
     if (h) {
       if (inRegion) break;
-      if (h[1].length === 2 && headingMatcher.test(h[2])) inRegion = true;
+      if (h[1]!.length === 2 && headingMatcher.test(h[2]!)) inRegion = true;
       continue;
     }
     if (!inRegion) continue;
@@ -62,7 +67,7 @@ function listItems(md, headingMatcher) {
     const bullet = /^\s*(?:[-*+]|\d+\.)\s+(.*)$/.exec(line);
     if (bullet) {
       if (current) items.push(current);
-      current = bullet[1].trim();
+      current = bullet[1]!.trim();
     } else if (current && line.trim()) {
       current += ` ${line.trim()}`;
     }
@@ -78,9 +83,10 @@ function listItems(md, headingMatcher) {
  * curated notes are installed, and the golden rules disappear from the
  * quickstart prompt.
  */
-export function extractInsights(pitfallsFile = PITFALLS_FILE) {
-  const empty = { contradictions: [], rules: [], warnings: [], installed: false };
-  if (!fs.existsSync(pitfallsFile)) return empty;
+export function extractInsights(pitfallsFile: string = PITFALLS_FILE): Insights {
+  if (!fs.existsSync(pitfallsFile)) {
+    return { contradictions: [], rules: [], warnings: [], installed: false };
+  }
   const md = fs.readFileSync(pitfallsFile, "utf8");
 
   return {

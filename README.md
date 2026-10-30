@@ -1,6 +1,7 @@
 # mcp-sylvanas
 
-[![Node](https://img.shields.io/badge/node-%E2%89%A518-339933)](https://nodejs.org)
+[![Node](https://img.shields.io/badge/node-%E2%89%A520-339933)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6)](tsconfig.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-007EC6)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-protocol%20e2e-2ea44f)](tools/protocol-test.mjs)
 
@@ -15,8 +16,8 @@ tables and admonitions keep their real structure. Clone, install, run: no
 external service, no network access at runtime.
 
 - **Transport**: stdio
-- **Runtime**: Node.js ≥ 18 (tested on Node 22)
-- **Dependency**: `@modelcontextprotocol/sdk` only
+- **Runtime**: Node.js ≥ 20 (tested on 20 / 22 / 24) — TypeScript (strict), compiled to `dist/`
+- **Dependencies**: `@modelcontextprotocol/sdk` + `zod`, nothing else
 - **Index**: rebuilt at every startup (~1 s) — no cache to invalidate
 
 ## The 8 tools
@@ -52,9 +53,11 @@ external service, no network access at runtime.
 ```bash
 git clone https://github.com/minchaka27/mcp-sylvanas.git
 cd mcp-sylvanas
-npm install
-npm test   # end-to-end protocol test against a real client
+npm install   # also compiles TypeScript to dist/ (prepare script)
+npm test      # end-to-end protocol test against a real client
 ```
+
+After editing the TypeScript sources, rebuild with `npm run build`.
 
 ## Register in an MCP client
 
@@ -65,7 +68,7 @@ The server speaks stdio; point any MCP client at it:
   "mcpServers": {
     "sylvanas-docs": {
       "command": "node",
-      "args": ["/absolute/path/to/mcp-sylvanas/index.js"]
+      "args": ["/absolute/path/to/mcp-sylvanas/dist/index.js"]
     }
   }
 }
@@ -78,16 +81,16 @@ The server speaks stdio; point any MCP client at it:
   "mcpServers": {
     "sylvanas-docs": {
       "command": "node",
-      "args": ["/absolute/path/to/mcp-sylvanas/index.js"]
+      "args": ["/absolute/path/to/mcp-sylvanas/dist/index.js"]
     }
   }
 }
 ```
 
 **Cursor / Kilo Code / others** — same shape: command `node`, one argument
-with the absolute path to `index.js`. On Windows, if `node` is not on the
-`PATH` of the launching process, use the absolute path to `node.exe` as the
-command.
+with the absolute path to `dist/index.js`. On Windows, if `node` is not on
+the `PATH` of the launching process, use the absolute path to `node.exe` as
+the command.
 
 ### Serving a different corpus
 
@@ -113,7 +116,7 @@ the tool falls back to that page's flattened body from the search index.
 
 ### Indexing
 
-`lib/indexer.js` turns the Markdown corpus into:
+`src/lib/indexer.ts` turns the Markdown corpus into:
 
 1. **Sections** — split on headings.
 2. **Chunks** — `###` subsections, then paragraph groups past 2 400
@@ -133,7 +136,7 @@ other file paths never become API symbols.
 
 ### Search
 
-`lib/search.js` — BM25 (`k1=1.5`, `b=0.75`) over two fields: body weight 1.0,
+`src/lib/search.ts` — BM25 (`k1=1.5`, `b=0.75`) over two fields: body weight 1.0,
 headings weight 3.2. Additional boosts: exact symbol match `+30`, method
 `+18`, exact phrase in a heading `+22`, in the body `+12`. Tokenization is
 diacritics-insensitive and compound words are split (`cast_safe` → `cast`,
@@ -141,47 +144,55 @@ diacritics-insensitive and compound words are split (`cast_safe` → `cast`,
 
 ### Rendering
 
-`lib/format.js` produces compact Markdown: headings, metadata, highlighted
+`src/lib/format.ts` produces compact Markdown: headings, metadata, highlighted
 excerpt, and always the `sylvanas_read(...)` command to go further.
 
 ## Project structure
 
 ```
 mcp-sylvanas/
-├── index.js                    # MCP server: tools, resources, prompt
-├── lib/
-│   ├── paths.js                # corpus directory resolution (SYLVANAS_DOCS_DIR)
-│   ├── text.js                 # normalization, tokenization, symbol extraction
-│   ├── availability.js         # version-note sentence detection
-│   ├── indexer.js              # markdown → sections, chunks, symbols, notes
-│   ├── search.js               # multi-field BM25 + boosts
-│   ├── insights.js             # curated notes from docs/pitfalls.md
-│   └── format.js               # Markdown rendering of the results
+├── src/                          # TypeScript sources (strict)
+│   ├── index.ts                  # MCP server: tools, resources, prompt
+│   └── lib/
+│       ├── types.ts              # shared structural types
+│       ├── paths.ts              # corpus directory resolution (SYLVANAS_DOCS_DIR)
+│       ├── text.ts               # normalization, tokenization, symbol extraction
+│       ├── availability.ts       # version-note sentence detection
+│       ├── indexer.ts            # markdown → sections, chunks, symbols, notes
+│       ├── search.ts             # multi-field BM25 + boosts
+│       ├── insights.ts           # curated notes from docs/pitfalls.md
+│       └── format.ts             # Markdown rendering of the results
+├── dist/                         # compiled output (npm run build)
 ├── docs/
-│   ├── pages/                  # the 118 official pages (English, verbatim)
-│   ├── manifest.json           # provenance + freeze date + page map
-│   ├── pitfalls.md             # curated community notes
-│   └── README.md               # corpus attribution & refresh guide
+│   ├── pages/                    # the 118 official pages (English, verbatim)
+│   ├── manifest.json             # provenance + freeze date + page map
+│   ├── pitfalls.md               # curated community notes
+│   └── README.md                 # corpus attribution & refresh guide
 ├── tools/
-│   ├── fetch-docs.mjs          # rebuild the corpus from the official site
-│   ├── html-to-markdown.mjs    # Docusaurus HTML → Markdown converter
-│   ├── protocol-test.mjs       # end-to-end test (real MCP client)
-│   ├── preview.mjs             # human inspection of tool outputs
-│   └── inspect-symbols.mjs     # symbol table inspection
-└── .github/workflows/ci.yml    # CI: protocol test on Node 18/20/22 + lint
+│   ├── fetch-docs.mjs            # rebuild the corpus from the official site
+│   ├── html-to-markdown.mjs      # Docusaurus HTML → Markdown converter
+│   ├── protocol-test.mjs         # end-to-end test (real MCP client)
+│   ├── preview.mjs               # human inspection of tool outputs
+│   └── inspect-symbols.mjs       # symbol table inspection
+├── tsconfig.json                 # strict TypeScript, NodeNext
+└── .github/workflows/ci.yml      # CI: lint + typecheck, protocol test on Node 20/22/24
 ```
 
-## Tests
+## Development
 
 ```bash
-npm test          # end-to-end protocol test (real client over stdio)
-npm run selftest  # quick offline smoke test
-npm run preview   # coverage | search "query" | api symbol | pitfalls
-npm run inspect   # symbol table statistics
+npm run build      # compile TypeScript to dist/
+npm run typecheck  # type-check without emitting
+npm run lint       # ESLint 10 + typescript-eslint
+npm test           # end-to-end protocol test (real client over stdio)
+npm run selftest   # quick offline smoke test
+npm run preview    # coverage | search "query" | api symbol | pitfalls
+npm run inspect    # symbol table statistics
 ```
 
 The protocol test starts a real server, performs the handshake, exercises
-the 8 tools, error handling, resources and prompts — 27 checks.
+the 8 tools, error handling, resources (including the `sylvanas://raw/{id}`
+template) and prompts — 28 checks.
 
 ## Maintaining the corpus
 

@@ -1,4 +1,5 @@
 import { normalize, tokenize, tokenizeWeighted } from "./text.js";
+import type { DocChunk, SearchResult, WeightedTerm } from "./types.js";
 
 const K1 = 1.5;
 const B = 0.75;
@@ -8,28 +9,39 @@ const W_HEAD = 3.2;
 
 const DOTTED_RE = /\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+)\b/g;
 
-const avg = (nums) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0);
+const avg = (nums: number[]): number =>
+  nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
 
-function escapeRe(s) {
+function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /** Multi-field BM25 search engine over the doc chunks. */
 export class SearchIndex {
-  constructor(chunks) {
+  private readonly chunks: DocChunk[];
+  private readonly body: string[][];
+  private readonly head: string[][];
+  private readonly bodyTf: Map<string, number>[];
+  private readonly headTf: Map<string, number>[];
+  private readonly bodyLen: number[];
+  private readonly headLen: number[];
+  private readonly avgBody: number;
+  private readonly avgHead: number;
+  private readonly df: Map<string, number> = new Map();
+
+  constructor(chunks: DocChunk[]) {
     this.chunks = chunks;
     this.body = chunks.map((c) => tokenize(c.plain));
     this.head = chunks.map((c) =>
-      tokenize(
-        [c.docTitle, c.sectionTitle, ...c.headingPath].filter(Boolean).join(" "),
-      ),
+      tokenize([c.docTitle, c.sectionTitle, ...c.headingPath].filter(Boolean).join(" ")),
     );
+    this.bodyTf = this.body.map(termFrequencies);
+    this.headTf = this.head.map(termFrequencies);
     this.bodyLen = this.body.map((t) => t.length);
     this.headLen = this.head.map((t) => t.length);
     this.avgBody = avg(this.bodyLen) || 1;
     this.avgHead = avg(this.headLen) || 1;
 
-    this.df = new Map();
     for (const tokens of this.body) {
       for (const t of new Set(tokens)) this.df.set(t, (this.df.get(t) || 0) + 1);
     }
@@ -38,30 +50,26 @@ export class SearchIndex {
     }
   }
 
-  idf(term) {
+  private idf(term: string): number {
     const n = this.chunks.length;
     const df = this.df.get(term) || 0;
     return Math.log(1 + (n - df + 0.5) / (df + 0.5));
   }
 
-  bm25(field, lengths, avgLen, terms) {
+  /** BM25 score of one field, normalized by its own document length. */
+  private bm25(field: Map<string, number>, dl: number, avgLen: number, terms: WeightedTerm[]): number {
     let score = 0;
     for (const { term, w } of terms) {
       const tf = field.get(term) || 0;
       if (!tf) continue;
-      const dl = lengths[term] ?? 0;
       const norm = 1 - B + B * (dl / avgLen);
       score += w * this.idf(term) * ((tf * (K1 + 1)) / (tf + K1 * norm));
     }
     return score;
   }
 
-  /**
-   * @param {string} query
-   * @param {{limit?: number, docId?: string|null}} options
-   */
-  search(query, { limit = 8, docId = null } = {}) {
-    const raw = String(query ?? "").trim();
+  search(query: string, { limit = 8, docId = null }: { limit?: number; docId?: string | null } = {}): SearchResult[] {
+    const raw = query.trim();
     if (!raw) return [];
 
     const terms = tokenizeWeighted(raw);
@@ -70,36 +78,24 @@ export class SearchIndex {
     const normQuery = normalize(raw);
 
     // Symbols explicitly present in the query
-    const qDotted = new Set();
+    const qDotted = new Set<string>();
     DOTTED_RE.lastIndex = 0;
-    let m;
-    while ((m = DOTTED_RE.exec(raw)) !== null) qDotted.add(normalize(m[1]));
+    let m: RegExpExecArray | null;
+    while ((m = DOTTED_RE.exec(raw)) !== null) qDotted.add(normalize(m[1]!));
     const qMethods = new Set(
       terms.filter((t) => t.term.includes("_") && t.w === 1).map((t) => t.term),
     );
 
-    // Term-frequency table per chunk
-    const bodyTf = this.body.map((tokens) => {
-      const tf = new Map();
-      for (const t of tokens) tf.set(t, (tf.get(t) || 0) + 1);
-      return tf;
-    });
-    const headTf = this.head.map((tokens) => {
-      const tf = new Map();
-      for (const t of tokens) tf.set(t, (tf.get(t) || 0) + 1);
-      return tf;
-    });
-
-    const results = [];
+    const results: SearchResult[] = [];
     for (let i = 0; i < this.chunks.length; i += 1) {
-      const chunk = this.chunks[i];
+      const chunk = this.chunks[i]!;
       if (docId && chunk.docId !== docId) continue;
 
       let score =
-        W_BODY * this.bm25(bodyTf[i], this.bodyLen[i], this.avgBody, terms) +
-        W_HEAD * this.bm25(headTf[i], this.headLen[i], this.avgHead, terms);
+        W_BODY * this.bm25(this.bodyTf[i]!, this.bodyLen[i]!, this.avgBody, terms) +
+        W_HEAD * this.bm25(this.headTf[i]!, this.headLen[i]!, this.avgHead, terms);
 
-      const hits = [];
+      const hits: string[] = [];
 
       // Exact symbol match
       const chunkDotted = chunk.symbols?.dotted ?? [];
@@ -113,7 +109,7 @@ export class SearchIndex {
           continue;
         }
         const last = s.split(".").pop();
-        if (chunkMethods.some((x) => normalize(x) === last)) {
+        if (last && chunkMethods.some((x) => normalize(x) === last)) {
           score += 14;
           hits.push(`${s} (method ${last})`);
         }
@@ -123,9 +119,7 @@ export class SearchIndex {
         if (chunkMethods.some((x) => normalize(x) === s)) {
           score += 18;
           hits.push(s);
-        } else if (
-          chunkDotted.some((x) => normalize(x).split(".").pop() === s)
-        ) {
+        } else if (chunkDotted.some((x) => normalize(x).split(".").pop() === s)) {
           score += 12;
           hits.push(`${s} (suffix)`);
         }
@@ -134,9 +128,7 @@ export class SearchIndex {
       // Exact-phrase bonus
       if (normQuery.length >= 4) {
         const headNorm = normalize(
-          [chunk.docTitle, chunk.sectionTitle, ...chunk.headingPath]
-            .filter(Boolean)
-            .join(" "),
+          [chunk.docTitle, chunk.sectionTitle, ...chunk.headingPath].filter(Boolean).join(" "),
         );
         if (headNorm.includes(normQuery)) {
           score += 22;
@@ -162,7 +154,7 @@ export class SearchIndex {
   }
 
   /** Excerpt around the first match, ~460 characters. */
-  snippet(chunk, terms) {
+  private snippet(chunk: DocChunk, terms: WeightedTerm[]): string {
     const plain = chunk.plain;
     if (!plain) return "";
 
@@ -182,4 +174,11 @@ export class SearchIndex {
     if (end < plain.length) out = `${out} …`;
     return out;
   }
+}
+
+/** Term-frequency table of one token list. */
+function termFrequencies(tokens: string[]): Map<string, number> {
+  const tf = new Map<string, number>();
+  for (const t of tokens) tf.set(t, (tf.get(t) || 0) + 1);
+  return tf;
 }

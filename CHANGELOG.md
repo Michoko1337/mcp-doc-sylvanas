@@ -4,6 +4,39 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] — 2026-10-30
+
+Modernization release: the runtime code is now TypeScript, strict.
+
+### Changed
+
+- **TypeScript migration**: `index.js` + `lib/*.js` → `src/` (strict mode,
+  `NodeNext`, no unused code). Compiled to `dist/` by `npm run build`;
+  `npm install` builds automatically (`prepare` script). `bin` and `main`
+  now point to `dist/index.js`.
+- **Node.js ≥ 20 required** (Node 18 is end-of-life). CI matrix: 20 / 22 / 24.
+- ESLint 9 → 10 with `typescript-eslint`; `ecmaVersion: "latest"`.
+- CI gains a `typecheck` job; Dependabot watches npm and GitHub Actions.
+- Version bump to 2.0.0 (runtime requirement change).
+
+### Fixed
+
+- `zod` is now a declared dependency — it was imported directly but only
+  present as a transitive dependency of the MCP SDK (phantom dependency).
+  `@eslint/js` likewise.
+- BM25 document-length normalization actually applies now: the per-field
+  length was indexed by term (always 0), so every chunk was scored as if it
+  had the average length. Ranking is now correctly length-normalized.
+- Term-frequency tables are precomputed once at startup instead of being
+  rebuilt on every query.
+- The package root is resolved by walking up to `package.json`, so the
+  corpus path is correct whatever the install layout.
+
+### Added
+
+- Protocol test now also covers the `sylvanas://raw/{id}` resource template.
+- `.nvmrc` (Node 22).
+
 ## [1.0.0] — 2026-10-30
 
 First public release.

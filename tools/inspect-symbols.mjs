@@ -2,8 +2,8 @@
  * Development helper: inspects the index built by the server.
  *   node tools/inspect-symbols.mjs [filter]
  */
-import { buildIndex } from "../lib/indexer.js";
-import { DOCS_DIR } from "../lib/paths.js";
+import { buildIndex } from "../dist/lib/indexer.js";
+import { DOCS_DIR } from "../dist/lib/paths.js";
 
 const idx = buildIndex(DOCS_DIR);
 const filter = process.argv[2] || "";

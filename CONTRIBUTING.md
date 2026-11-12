@@ -5,8 +5,8 @@ Thanks for taking the time to contribute!
 ## Development setup
 
 ```bash
-git clone https://github.com/minchaka27/mcp-sylvanas.git
-cd mcp-sylvanas
+git clone https://github.com/Michoko1337/mcp-doc-sylvanas.git
+cd mcp-doc-sylvanas
 npm install
 npm test
 ```

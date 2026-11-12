@@ -31,11 +31,11 @@
   "author": "Thomas C",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/minchaka27/mcp-sylvanas.git"
+    "url": "git+https://github.com/Michoko1337/mcp-doc-sylvanas.git"
   },
-  "homepage": "https://github.com/minchaka27/mcp-sylvanas#readme",
+  "homepage": "https://github.com/Michoko1337/mcp-doc-sylvanas#readme",
   "bugs": {
-    "url": "https://github.com/minchaka27/mcp-sylvanas/issues"
+    "url": "https://github.com/Michoko1337/mcp-doc-sylvanas/issues"
   },
   "keywords": [
     "mcp",

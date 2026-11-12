@@ -51,8 +51,8 @@ external service, no network access at runtime.
 ## Installation
 
 ```bash
-git clone https://github.com/minchaka27/mcp-sylvanas.git
-cd mcp-sylvanas
+git clone https://github.com/Michoko1337/mcp-doc-sylvanas.git
+cd mcp-doc-sylvanas
 npm install   # also compiles TypeScript to dist/ (prepare script)
 npm test      # end-to-end protocol test against a real client
 ```
@@ -150,7 +150,7 @@ excerpt, and always the `sylvanas_read(...)` command to go further.
 ## Project structure
 
 ```
-mcp-sylvanas/
+mcp-doc-sylvanas/
 ├── src/                          # TypeScript sources (strict)
 │   ├── index.ts                  # MCP server: tools, resources, prompt
 │   └── lib/

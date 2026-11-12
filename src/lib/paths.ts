@@ -25,6 +25,21 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 export const SERVER_ROOT = findPackageRoot(here);
 
 /**
+ * Server version, read from package.json so the MCP handshake and the
+ * package never drift apart. Falls back to "0.0.0" if it cannot be read.
+ */
+export const SERVER_VERSION: string = (() => {
+  try {
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(SERVER_ROOT, "package.json"), "utf8"),
+    ) as { version?: string };
+    return typeof pkg.version === "string" ? pkg.version : "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+})();
+
+/**
  * Directory holding the Markdown corpus — one file per official docs page.
  * Default: the bundled `docs/pages/`. Set SYLVANAS_DOCS_DIR to serve a
  * different, locally maintained corpus instead.

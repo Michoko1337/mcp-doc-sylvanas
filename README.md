@@ -10,7 +10,7 @@ documentation** ([docs.project-sylvanas.net](https://docs.project-sylvanas.net))
 to AI agents: full-text search, section reading, an API symbol table, a
 namespace inventory, and availability notes.
 
-The whole site — **118 pages** — is bundled in the repository as a Markdown
+The whole site — **every official page** — is bundled in the repository as a Markdown
 corpus (`docs/pages/`), converted from the rendered pages so code blocks,
 tables and admonitions keep their real structure. Clone, install, run: no
 external service, no network access at runtime.
@@ -164,7 +164,7 @@ mcp-sylvanas/
 │       └── format.ts             # Markdown rendering of the results
 ├── dist/                         # compiled output (npm run build)
 ├── docs/
-│   ├── pages/                    # the 118 official pages (English, verbatim)
+│   ├── pages/                    # the official pages (English, verbatim)
 │   ├── manifest.json             # provenance + freeze date + page map
 │   ├── pitfalls.md               # curated community notes
 │   └── README.md                 # corpus attribution & refresh guide
@@ -174,8 +174,9 @@ mcp-sylvanas/
 │   ├── protocol-test.mjs         # end-to-end test (real MCP client)
 │   ├── preview.mjs               # human inspection of tool outputs
 │   └── inspect-symbols.mjs       # symbol table inspection
+├── test/                         # unit tests (node:test) + fixtures
 ├── tsconfig.json                 # strict TypeScript, NodeNext
-└── .github/workflows/ci.yml      # CI: lint + typecheck, protocol test on Node 20/22/24
+└── .github/workflows/ci.yml      # CI: lint + typecheck, tests on Node 20/22/24 (Linux + Windows)
 ```
 
 ## Development
@@ -184,7 +185,9 @@ mcp-sylvanas/
 npm run build      # compile TypeScript to dist/
 npm run typecheck  # type-check without emitting
 npm run lint       # ESLint 10 + typescript-eslint
+npm run test:unit  # unit tests (node:test, no extra dependencies)
 npm test           # end-to-end protocol test (real client over stdio)
+npm run test:all   # unit + end-to-end
 npm run selftest   # quick offline smoke test
 npm run preview    # coverage | search "query" | api symbol | pitfalls
 npm run inspect    # symbol table statistics
@@ -192,7 +195,9 @@ npm run inspect    # symbol table statistics
 
 The protocol test starts a real server, performs the handshake, exercises
 the 8 tools, error handling, resources (including the `sylvanas://raw/{id}`
-template) and prompts — 28 checks.
+template) and prompts — 28 checks. Unit tests (`npm run test:unit`, built on
+`node:test`) cover the text utilities, BM25 ranking, availability detection,
+the HTML→Markdown converter and the indexer, with no extra dependencies.
 
 ## Maintaining the corpus
 

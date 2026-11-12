@@ -12,10 +12,6 @@ const DOTTED_RE = /\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+)\b/g;
 const avg = (nums: number[]): number =>
   nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
 
-function escapeRe(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 /** Multi-field BM25 search engine over the doc chunks. */
 export class SearchIndex {
   private readonly chunks: DocChunk[];
@@ -28,9 +24,14 @@ export class SearchIndex {
   private readonly avgBody: number;
   private readonly avgHead: number;
   private readonly df: Map<string, number> = new Map();
+  /** Every bare method known to the corpus, for the search-time method boost. */
+  private readonly knownMethods: Set<string> = new Set();
 
   constructor(chunks: DocChunk[]) {
     this.chunks = chunks;
+    for (const c of chunks) {
+      for (const m of c.symbols?.methods ?? []) this.knownMethods.add(normalize(m));
+    }
     this.body = chunks.map((c) => tokenize(c.plain));
     this.head = chunks.map((c) =>
       tokenize([c.docTitle, c.sectionTitle, ...c.headingPath].filter(Boolean).join(" ")),
@@ -83,7 +84,9 @@ export class SearchIndex {
     let m: RegExpExecArray | null;
     while ((m = DOTTED_RE.exec(raw)) !== null) qDotted.add(normalize(m[1]!));
     const qMethods = new Set(
-      terms.filter((t) => t.term.includes("_") && t.w === 1).map((t) => t.term),
+      terms
+        .filter((t) => t.w === 1 && (t.term.includes("_") || this.knownMethods.has(t.term)))
+        .map((t) => t.term),
     );
 
     const results: SearchResult[] = [];
@@ -158,11 +161,15 @@ export class SearchIndex {
     const plain = chunk.plain;
     if (!plain) return "";
 
+    // Match against a normalized haystack so case/accent differences don't
+    // hide the term; the slice still comes from the original text for display.
+    // (Alignment is exact for common accents; exotic Unicode may shift the
+    // window by a char or two, which is harmless for an excerpt.)
+    const haystack = normalize(plain);
     const ranked = [...terms].sort((a, b) => b.w - a.w).slice(0, 6);
     let idx = -1;
     for (const { term } of ranked) {
-      const re = new RegExp(escapeRe(term), "i");
-      const found = plain.search(re);
+      const found = haystack.indexOf(term);
       if (found !== -1 && (idx === -1 || found < idx)) idx = found;
     }
     if (idx === -1) idx = 0;

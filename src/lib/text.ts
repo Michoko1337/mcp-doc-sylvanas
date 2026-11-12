@@ -44,9 +44,26 @@ export function tokenizeWeighted(text: string): WeightedTerm[] {
   return out;
 }
 
-/** Flat token list (full terms + parts), for the inverted index. */
+/**
+ * Flat token list for the inverted index: full terms plus their underscore
+ * parts, WITH repetitions preserved. Term frequency is what BM25 ranks on,
+ * so — unlike the query tokenizer — this must not deduplicate: a chunk that
+ * mentions `cast_safe` ten times has to outscore one mentioning it once.
+ */
 export function tokenize(text: string): string[] {
-  return tokenizeWeighted(text).map((t) => t.term);
+  const norm = normalize(text);
+  const raw = norm.match(TOKEN_RE);
+  if (!raw) return [];
+  const out: string[] = [];
+  for (const token of raw) {
+    out.push(token);
+    if (token.includes("_")) {
+      for (const part of token.split("_")) {
+        if (part.length > 2) out.push(part);
+      }
+    }
+  }
+  return out;
 }
 
 /** Strips Markdown syntax, keeping the content (code stays readable). */

@@ -16,7 +16,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
-import { DOCS_DIR } from "./lib/paths.js";
+import { DOCS_DIR, SERVER_VERSION } from "./lib/paths.js";
 import { buildIndex } from "./lib/indexer.js";
 import { SearchIndex } from "./lib/search.js";
 import { extractInsights } from "./lib/insights.js";
@@ -137,7 +137,7 @@ function sectionBody(doc: Doc, section: DocSection): string {
 const server = new McpServer(
   {
     name: "sylvanas-docs",
-    version: "1.0.0",
+    version: SERVER_VERSION,
   },
   {
     instructions:
@@ -263,7 +263,9 @@ server.registerTool(
       }
     }
     for (const k of methods.keys()) {
-      if (k !== key && (k.startsWith(key) || key.startsWith(k))) relatedKeys.add(k);
+      // Boundary-aware: relate "cast" ↔ "cast_safe", but not "cast_safe" ↔
+      // "cast_spell" (a bare prefix match would pull in unrelated families).
+      if (k !== key && (k.startsWith(`${key}_`) || key.startsWith(`${k}_`))) relatedKeys.add(k);
     }
     const related = [...relatedKeys]
       .map((k) => dotted.get(k) || methods.get(k))

@@ -41,6 +41,8 @@ const MANIFEST_FILE = path.join(DOCS_DIR, "manifest.json");
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36 mcp-sylvanas-docs-fetcher";
 const FETCH_CONCURRENCY = 4;
+const FETCH_TIMEOUT_MS = 30_000;
+const INDEX_TIMEOUT_MS = 60_000;
 
 /* ------------------------------------------------------------------ */
 /*  Search index: download / cache                                     */
@@ -51,7 +53,7 @@ async function loadIndex({ refresh = false } = {}) {
     return JSON.parse(fs.readFileSync(CACHE_FILE, "utf8"));
   }
   process.stderr.write("[fetch-docs] downloading the search index…\n");
-  const res = await fetch(INDEX_URL);
+  const res = await fetch(INDEX_URL, { signal: AbortSignal.timeout(INDEX_TIMEOUT_MS) });
   if (!res.ok) throw new Error(`HTTP ${res.status} on ${INDEX_URL}`);
   const text = await res.text();
   fs.mkdirSync(CACHE_DIR, { recursive: true });
@@ -128,6 +130,7 @@ async function fetchPageMarkdown(url) {
   const res = await fetch(`${SITE_ORIGIN}${url === "/" ? "" : url}`, {
     headers: { "user-agent": USER_AGENT, accept: "text/html" },
     redirect: "follow",
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const html = await res.text();

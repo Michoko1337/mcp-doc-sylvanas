@@ -185,7 +185,7 @@ export function formatDocsList(documents: Doc[]): string {
 export function formatSections(doc: Doc): string {
   const lines = [`# ${doc.title} — ${doc.file}`, "", `${doc.sections.length} sections.`, ""];
   doc.sections.forEach((s, i) => {
-    lines.push(`${i + 1}. **${s.heading}** (lines ${s.lineStart + 1}–${s.lineEnd + 1})`);
+    lines.push(`${i + 1}. **${s.heading}** (lines ${s.lineStart + 1}–${s.lineEnd})`);
   });
   lines.push("");
   lines.push(`→ \`sylvanas_read(file="${doc.id}", section="<title>")\``);

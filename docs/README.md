@@ -4,7 +4,7 @@ This folder holds the **official Project Sylvanas developer documentation**,
 fetched verbatim from [docs.project-sylvanas.net](https://docs.project-sylvanas.net)
 and frozen on the date recorded in [`manifest.json`](manifest.json).
 
-- `pages/` — one Markdown file per official page (118 pages at freeze time),
+- `pages/` — one Markdown file per official page (count recorded in `manifest.json`),
   converted from the rendered site so code blocks, tables and admonitions
   keep their real structure.
 - `manifest.json` — provenance: the source site, the freeze date

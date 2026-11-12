@@ -6,7 +6,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Documentation corpus refresh — no server code change.
+Server search/reliability fixes, unit tests, and a documentation corpus refresh.
+
+### Fixed (server)
+
+- **BM25 term frequency**: document tokenization no longer deduplicates terms,
+  so a chunk mentioning a symbol many times now outranks one mentioning it once.
+  Previously every term frequency was silently flattened to 1, disabling the
+  TF component of BM25.
+- **Server version**: the MCP handshake reports the `package.json` version
+  instead of a hardcoded `1.0.0`.
+- Search snippets locate matches on normalized text, so case/accent differences
+  no longer hide the excerpt anchor.
+- `sylvanas_api` "related symbols" uses boundary-aware method matching instead
+  of a bare bidirectional prefix (less noise).
+- `sylvanas_list("sections")` end line bound is no longer off by one.
+
+### Added (server)
+
+- Unit tests (`node:test`, zero new dependencies) for the text utilities, BM25
+  search, availability detection, the HTML→Markdown converter and the indexer:
+  `npm run test:unit` (and `npm run test:all` for unit + e2e).
+- The search-time method boost now also applies to known methods without an
+  underscore (e.g. `begin`).
+- Network timeouts (`AbortSignal.timeout`) in `tools/fetch-docs.mjs`.
+- CI: a Windows runner in the test matrix, plus `test:unit` and `selftest` steps.
 
 ### Changed
 

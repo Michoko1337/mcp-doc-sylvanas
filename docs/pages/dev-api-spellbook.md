@@ -492,6 +492,9 @@ Returns: *boolean* — `true` if the target is within range for the specified sp
 > [!WARNING]
 > On the private-server clients (Vanilla 1.14 / TBC 2.5.3) the check goes by the spell's name, not its ID. For a spell with ranks, the game checks the rank it picks for that name (normally your highest), not the rank ID you passed.
 
+> [!WARNING]
+> It answered "in range" for melee spells at 5.2 and 9.9 yards, where the server refused past 5.0. From core 2.187, a melee spell's `true` there is also held to [`get_melee_reach`](/dev/api/game-object#get_melee_reachtarget---number), compared with the centre-to-centre distance. On older cores, do that comparison yourself (core 2.186+).
+
 ---
 
 ### `get_spell_damage(spell_id)`

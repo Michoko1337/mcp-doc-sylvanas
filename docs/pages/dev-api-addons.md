@@ -197,6 +197,33 @@ Returns all waypoints associated with the current Zygor guide step. This may inc
 
 ---
 
+### `core.addons.zygor.skip_current_step`
+
+Syntax
+
+```lua
+core.addons.zygor.skip_current_step() -> boolean
+```
+
+Returns
+
+- `boolean` : `true` when Zygor moved on; `false` when it is not loaded, has no current guide or step, or is following a party sync leader (Zygor ignores skips then).
+
+Description
+
+Moves Zygor past its current step, like left-clicking the next-step arrow on its viewer. Use it for optional steps your bot cannot or should not finish. Zygor goes to the next valid step, or into the next guide at the end of one. Needs core 2.173 or later.
+
+**Example Usage**
+
+```lua
+local zygor = core.addons.zygor
+if zygor.skip_current_step and zygor.has_current_step() then
+    zygor.skip_current_step()
+end
+```
+
+---
+
 ## RestedXP
 
 The `core.addons.rested_xp` namespace reads guide state from the RestedXP Guides addon. Check `is_loaded()` before using it. `get_current_step()` and `get_current_waypoint()` return zero-valued tables when there is no active guide step or waypoint.
@@ -509,6 +536,334 @@ end
 
 ---
 
+## Polestar
+
+The `core.addons.polestar` namespace reads guide state from [Polestar Guides](https://www.curseforge.com/wow/addons/polestar), the Forever leveling guide. It reads through Polestar's own engine, the same calls its guide window makes. Check `is_loaded()` before using it. Needs core 2.196 or later.
+
+> [!WARNING]
+> Polestar is released for Forever only. On every other version `is_loaded()` and `has_current_step()` are always `false` and the other functions return empty or zero-valued tables.
+
+> [!NOTE]
+> The player can page Polestar's window ahead or back without moving the route. `get_current_step()` is always the **live** step: the first step for this character that is not done or skipped. `get_current_waypoint()` is Polestar's arrow, which follows the **shown** step. `get_guide()` gives both (`live_step`, `viewed_step`).
+
+**Goal fields** (`polestar_goal_info`, used by `get_current_step`, `get_step` and `get_along_goals`):
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `index` | integer | The goal's index in its step. |
+| `type` | string | The guide verb: `accept`, `turnin`, `complete`, `kill`, `collect`, `goto`, `talk`, `interact`, `use`, `buy`, `vendor`, `train`, `sethome`, `hearth`, `fly`, `getfp`, `level`, `task`, `note`... |
+| `status` | string | `"active"` or `"pending"` (open; `pending` when the window shows another step), `"done"`, `"skipped"`, or `"na"` (not for this character). |
+| `is_complete` | boolean | `status == "done"`. |
+| `text` | string | The guide window's line, e.g. `"Kill 8 Kobold Vermin"`. |
+| `quest_id` | integer | The quest, 0 when none. |
+| `objective` | integer | The quest objective index (1-based), 0 when none. |
+| `npc_id`, `npc_name` | integer, string | The NPC. For `nearest` goals (vendor, trainer, innkeeper) the one Polestar picked. |
+| `item_id` | integer | 0 when none. |
+| `optional` | boolean | An optional goal never holds the step. |
+| `is_current` | boolean | The goal Polestar's window marks and its arrow leads to. |
+| `map_id`, `map_x`, `map_y` | integer, number | The goal's point on its UiMap, 0-1 in the live map frame. |
+| `has_position` | boolean | `false` when the goal has no point or Polestar could not place it in the world. |
+| `continent_id` | integer | Instance map id of `position`. 0 is Eastern Kingdoms, so check `has_position`. |
+| `position` | vec3 | World position. `z` is the guide's own height there, 0 when unknown: use `core.get_height_for_position`. |
+| `progress`, `progress_max` | integer | Kills, items... done so far and needed, 0 when the goal has no count. |
+| `step` | integer | The goal's step (an along goal's own step). |
+
+---
+
+### `core.addons.polestar.is_loaded`
+
+Syntax
+
+```lua
+core.addons.polestar.is_loaded() -> boolean
+```
+
+Returns
+
+- `boolean` : Whether Polestar is loaded and logged in. Its engine runs only after login.
+
+**Example Usage**
+
+```lua
+if core.addons.polestar.is_loaded() then
+    core.log("Polestar is available")
+end
+```
+
+---
+
+### `core.addons.polestar.has_current_step`
+
+Syntax
+
+```lua
+core.addons.polestar.has_current_step() -> boolean
+```
+
+Returns
+
+- `boolean` : Whether a guide is loaded and has a live step left.
+
+---
+
+### `core.addons.polestar.get_guide`
+
+Syntax
+
+```lua
+core.addons.polestar.get_guide() -> polestar_guide_info
+```
+
+Returns
+
+- `polestar_guide_info` , zero-valued when no guide is loaded:
+  - `id` ( *string* ): The guide id, e.g. `"forever/alliance/02-westfall"` .
+  - `title` ( *string* )
+  - `step_count` ( *integer* ): All steps of the guide.
+  - `steps_done` ( *integer* ): Steps for this character that are done or skipped.
+  - `steps_total` ( *integer* ): Steps for this character.
+  - `live_step` ( *integer* ): The step the route is at, 0 when the guide is complete.
+  - `viewed_step` ( *integer* ): The step the window shows.
+  - `is_complete` ( *boolean* ): A guide is loaded and nothing is left in it.
+
+**Example Usage**
+
+```lua
+local g = core.addons.polestar.get_guide()
+core.log(string.format("%s: %d/%d", g.title, g.steps_done, g.steps_total))
+```
+
+---
+
+### `core.addons.polestar.get_current_step`
+
+Syntax
+
+```lua
+core.addons.polestar.get_current_step() -> polestar_step_info
+```
+
+Returns
+
+- `polestar_step_info` , the live step, zero-valued when there is none:
+  - `num` ( *integer* ): The step index.
+  - `title` ( *string* )
+  - `note` ( *string* ): The step's tip, `""` when none.
+  - `status` ( *string* ): `"current"` (the step the window shows), `"upcoming"` , `"done"` , `"skipped"` or `"na"` .
+  - `is_complete` ( *boolean* ): `status == "done"` .
+  - `skipped` ( *boolean* ): The player skipped it.
+  - `label` ( *string* ): The step's label, `""` when none.
+  - `along` ( *boolean* ): An along step: its goals are done on the way, never a stop.
+  - `why` ( *string* ): Why the step holds nothing for this character, `""` otherwise.
+  - `current_goal` ( *integer* ): Index of the goal the window marks, 0 when none or not the shown step.
+  - `is_viewed` ( *boolean* ): The step the guide window shows.
+  - `goals` ( *polestar_goal_info[]* ): See the goal fields above.
+
+**Example Usage**
+
+```lua
+local step = core.addons.polestar.get_current_step()
+for _, goal in ipairs(step.goals) do
+    if not goal.is_complete and goal.status ~= "na" and goal.has_position then
+        core.log(string.format("%s at %.1f, %.1f", goal.text, goal.position.x, goal.position.y))
+    end
+end
+```
+
+---
+
+### `core.addons.polestar.get_step`
+
+Syntax
+
+```lua
+core.addons.polestar.get_step(index: integer) -> polestar_step_info
+```
+
+**Parameters**
+
+- `index` : The step index (1-based).
+
+Returns
+
+- `polestar_step_info` : Same fields as `get_current_step()` , zero-valued when there is no such step. Use it to look ahead or back.
+
+---
+
+### `core.addons.polestar.get_along_goals`
+
+Syntax
+
+```lua
+core.addons.polestar.get_along_goals() -> polestar_goal_info[]
+```
+
+Returns
+
+- `polestar_goal_info[]` : The open goals Polestar lists "along the way" (along steps behind the live step, then quests the player pinned), each with its own `step` . Empty when none.
+
+---
+
+### `core.addons.polestar.get_current_waypoint`
+
+Syntax
+
+```lua
+core.addons.polestar.get_current_waypoint() -> polestar_waypoint_info
+```
+
+Returns
+
+- `polestar_waypoint_info` , Polestar's arrow target:
+  - `is_valid` ( *boolean* ): `false` when the arrow has no target (no guide, a start gate, nothing on the step has a place).
+  - `step` , `goal` ( *integer* ): The goal the arrow leads to.
+  - `type` ( *string* ): The goal's verb.
+  - `quest_id` ( *integer* )
+  - `label` ( *string* ): The arrow's text.
+  - `map_id` ( *integer* ), `map_x` , `map_y` ( *number* , 0-1, live map frame)
+  - `has_position` ( *boolean* ), `continent_id` ( *integer* ), `position` ( *vec3* , `z` 0 when the guide has no height there)
+  - `radius` ( *number* ): Arrival margin in yards.
+
+**Example Usage**
+
+```lua
+local wp = core.addons.polestar.get_current_waypoint()
+if wp.is_valid and wp.has_position then
+    core.log(string.format("%s at %.1f, %.1f", wp.label, wp.position.x, wp.position.y))
+end
+```
+
+---
+
+### `core.addons.polestar.skip_current_step`
+
+Syntax
+
+```lua
+core.addons.polestar.skip_current_step() -> boolean
+```
+
+Returns
+
+- `boolean` : `true` when the live step was skipped; `false` when Polestar is not loaded or the guide is complete.
+
+Description
+
+Skips the live step, like the window's Skip button: saved, and Polestar's own undo brings it back. If the player is looking at another step, the window first goes back to the live one.
+
+---
+
+### `core.addons.polestar.toggle_goal`
+
+Syntax
+
+```lua
+core.addons.polestar.toggle_goal(step: integer, goal: integer) -> boolean
+```
+
+**Parameters**
+
+- `step` : The step index.
+- `goal` : The goal index in that step.
+
+Returns
+
+- `boolean` : `true` when the tick changed; `false` for a note, a goal already done by the game, or no such goal.
+
+Description
+
+Ticks a goal done, or clears its tick, like clicking it in the window. Meant for `task` goals Polestar cannot see, which hold the step until ticked.
+
+**Example Usage**
+
+```lua
+local step = core.addons.polestar.get_current_step()
+for _, goal in ipairs(step.goals) do
+    if goal.type == "task" and goal.status == "active" then
+        core.addons.polestar.toggle_goal(step.num, goal.index)
+    end
+end
+```
+
+---
+
+## Dungeon Journal
+
+The `core.addons.dungeon_journal` namespace reads the map of ForeverDungeonJournal ("DungeonJournal" by Exehn), the Forever dungeon journal. Inside one of its dungeons, the journal lays its own dungeon map over the World Map. The World Map itself stays on the continent (947 inside a classic dungeon), so `core.game_ui.get_current_map_id()` cannot tell you a dungeon map is on the screen: ask here. Check `is_loaded()` before using it. Needs core 2.200 or later.
+
+> [!WARNING]
+> ForeverDungeonJournal is released for Forever only. On every other version `is_loaded()` and `is_map_attached()` are always `false` and `get_shown_map()` has `is_valid` set to `false`.
+
+---
+
+### `core.addons.dungeon_journal.is_loaded`
+
+Syntax
+
+```lua
+core.addons.dungeon_journal.is_loaded() -> boolean
+```
+
+Returns
+
+- `boolean` : Whether ForeverDungeonJournal is loaded.
+
+---
+
+### `core.addons.dungeon_journal.is_map_attached`
+
+Syntax
+
+```lua
+core.addons.dungeon_journal.is_map_attached() -> boolean
+```
+
+Returns
+
+- `boolean` : Whether the journal's dungeon map is over the World Map right now.
+
+Description
+
+`false` when the World Map is closed, the player right-clicked back to the world map, the journal window is open on its own, or the journal's world map option is off.
+
+---
+
+### `core.addons.dungeon_journal.get_shown_map`
+
+Syntax
+
+```lua
+core.addons.dungeon_journal.get_shown_map() -> dungeon_journal_map_info
+```
+
+Returns
+
+- `dungeon_journal_map_info` , the dungeon and floor the journal's map shows:
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `is_valid` | boolean | A dungeon with a journal map is selected and a floor of it was rendered. |
+| `is_attached` | boolean | The map is over the World Map right now, same as `is_map_attached()`. |
+| `dungeon` | string | The journal's key for the dungeon, its English name (`"Wailing Caverns"`). `""` when none. |
+| `floor` | integer | The floor shown, 1-based. 0 when `is_valid` is `false`. |
+| `floor_count` | integer | How many floors the journal has for this dungeon. |
+| `ui_map_id` | integer | That floor's UiMapID (279 for Wailing Caverns). 0 when the floor has none (Forever's new dungeons: Ruins of Lordaeron, Hall of Thanes...). |
+
+Description
+
+While `is_attached` is `true` this is the picture on the World Map. Otherwise it is what the journal's own window shows (or last showed). A floor picked with the map's floor buttons is seen at once.
+
+**Example Usage**
+
+```lua
+local m = core.addons.dungeon_journal.get_shown_map()
+if m.is_valid and m.is_attached then
+    core.log(m.dungeon .. " floor " .. m.floor .. " of " .. m.floor_count .. ", UiMap " .. m.ui_map_id)
+end
+```
+
+---
+
 ## BigWigs
 
 ### `core.addons.bigwigs.is_loaded`
@@ -808,6 +1163,44 @@ Returns all quest IDs indexed by Questie's compiled quest database. This is the 
 if core.addons.questie.is_ready() then
     local quest_ids = core.addons.questie.get_quest_ids()
     core.log("Questie indexes " .. #quest_ids .. " quests")
+end
+```
+
+---
+
+### `core.addons.questie.get_party_quests`
+
+Syntax
+
+```lua
+core.addons.questie.get_party_quests(player_name: string) -> table<integer, table[]>
+```
+
+**Parameters**
+
+- `player_name` : `string` - The party member's name: `"Name"` on your realm, `"Name-Realm"` otherwise. A name without a realm also matches a cross-realm member.
+
+Returns
+
+- `table<integer, table[]>` : Keyed by quest ID. Each value is the list of that quest's objectives, each a table with:
+  - `index` : `integer` - Objective index in the quest.
+  - `id` : `integer` - Questie's target ID for it (NPC, object or item), `0` when Questie has none.
+  - `type` : `string` - Questie's objective type letter, e.g. `"m"` monster, `"o"` object, `"i"` item, `"e"` event.
+  - `finished` : `boolean`
+  - `fulfilled` : `integer` - Progress so far.
+  - `required` : `integer` - Progress needed.
+
+Description
+
+Returns the quests and progress Questie has received for one party member through its own addon messages. Only party members who run Questie show up, and your own quests never do (use `core.quests` for those). Empty table when Questie is not loaded or holds nothing for that player. Needs core 2.176 or later.
+
+**Example Usage**
+
+```lua
+for quest_id, objectives in pairs(core.addons.questie.get_party_quests("Bob")) do
+    for _, o in ipairs(objectives) do
+        core.log(quest_id .. " #" .. o.index .. ": " .. o.fulfilled .. "/" .. o.required)
+    end
 end
 ```
 

@@ -67,3 +67,43 @@ if core.party.can_invite() then
     core.log("Invite sent: " .. tostring(sent))
 end
 ```
+
+---
+
+### `core.party.get_invite_confirmation`
+
+Syntax
+
+```lua
+core.party.get_invite_confirmation() -> table | nil
+```
+
+Returns
+
+- `table` : The first pending request.
+- `nil` : Nothing is pending, or the game has no such requests (private servers).
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `invite` | `string` | The pending invite, as the game identifies it |
+| `guid` | `string` | GUID of the player the request is about |
+| `name` | `string` | Name of that player |
+| `type` | `string` | `"request"` (they asked to join), `"suggest"` (a group member suggests them) or `"queue_warning"` |
+| `will_convert_to_raid` | `boolean` | Accepting turns your party into a raid |
+
+Description
+
+Reads what the game's "X has requested to join your group" popup shows. Answer it with [`core.input.answer_invite_confirmation`](/dev/api/input). The `GROUP_INVITE_CONFIRMATION` game event carries the same request. Needs core 2.190 or newer.
+
+**Example Usage**
+
+```lua
+core.register_on_game_event_callback(function(event_name, args)
+    if event_name ~= "GROUP_INVITE_CONFIRMATION" then return end
+    local req = core.party.get_invite_confirmation()
+    if req and req.type == "request" then
+        core.log(req.name .. " asked to join, declining")
+        core.input.answer_invite_confirmation(false)
+    end
+end)
+```

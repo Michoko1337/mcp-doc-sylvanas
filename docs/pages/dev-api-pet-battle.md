@@ -7,7 +7,9 @@
 The `core.pet_battle` module provides functions for interacting with the WoW pet battle system, including battle state queries, pet management, journal access, and toy usage.
 
 > [!WARNING]
-> Every function on this page works on Retail only. On every Classic version, MoP Classic included even though it has pet battles in game, the readers return `false`, `0` or empty values and the actions (abilities, swaps, summons, toys) silently do nothing.
+> Every function on this page works on Retail only. On every Classic version, MoP Classic included even though it has pet battles in game, the readers return `false`, `0` or empty values and the actions (abilities, swaps, summons) silently do nothing.
+>
+> The two toy calls are the exception: since core 2.200 they also work on Forever, which has a Toy Box.
 
 ---
 
@@ -1092,6 +1094,8 @@ Summons a pet as a companion by its GUID. This is the non-combat companion pet t
 
 ## Toys
 
+Retail and Forever (Forever needs core 2.200 or later). Clients without a Toy Box (Classic Era, TBC, MoP, the private servers) answer `false`.
+
 ### `core.pet_battle.player_has_toy`
 
 Syntax
@@ -1119,7 +1123,7 @@ Returns whether the player has a specific toy in their toy box collection.
 Syntax
 
 ```lua
-core.pet_battle.use_toy(item_id: integer) -> nil
+core.pet_battle.use_toy(item_id: integer) -> boolean
 ```
 
 **Parameters**
@@ -1128,11 +1132,22 @@ core.pet_battle.use_toy(item_id: integer) -> nil
 
 Returns
 
-- `nil`
+- `boolean` : `true` when the client's toy call was reached, which is **not** the same as the toy going off. Before core 2.200 it returned nothing.
 
 Description
 
-Uses a toy from the player's toy box by its item ID. The toy must be owned and off cooldown.
+Uses a toy from the player's toy box by its item ID, the same as clicking it in the Toy Box. The client refuses a toy the player does not own, one on cooldown, or one used while moving or casting, without an error, so check `player_has_toy` first.
+
+**Example Usage**
+
+```lua
+-- Throw Pouch of Violet Dust into the camp fire once the camp stands
+local POUCH_OF_VIOLET_DUST = 289439
+
+if core.pet_battle.player_has_toy(POUCH_OF_VIOLET_DUST) then
+    core.pet_battle.use_toy(POUCH_OF_VIOLET_DUST)
+end
+```
 
 ---
 

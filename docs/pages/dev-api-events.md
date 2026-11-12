@@ -288,12 +288,15 @@ These are **not** notifications. Like the confirmations above, the engine holds 
 | `START_LOOT_ROLL` | `roll_id`, `roll_time` | [`core.input.roll_on_loot`](/dev/api/input) |
 | `CONFIRM_LOOT_ROLL` | `roll_id`, `roll_type` | `core.input.roll_on_loot` |
 | `PARTY_INVITE_REQUEST` | `sender` | `core.input.answer_group_invite` |
+| `GROUP_INVITE_CONFIRMATION` | `invite`, `name`, `type`, `guid` (core 2.190+) | `core.input.answer_invite_confirmation` |
 | `GUILD_INVITE_REQUEST` | `inviter`, `guild_name` | `core.input.answer_guild_invite` |
 | `DUEL_REQUESTED` | `challenger` | `core.input.answer_duel` |
 | `DUEL_FINISHED` | *(none)* | - |
 | `RESURRECT_REQUEST` | `caster` | `core.input.answer_resurrect` |
 | `READY_CHECK` | `initiator`, `time` | `core.input.confirm_ready_check` |
 | `CONFIRM_XP_LOSS` | *(none)* | `core.input.accept_xp_loss` |
+
+`GROUP_INVITE_CONFIRMATION` is "X has requested to join your group" (`type` = `"request"`), or a group member suggesting someone (`"suggest"`). The game sends it with no arguments; the core attaches the pending request itself. Needs core 2.190 or newer.
 
 > [!WARNING]
 > The client reports you as **not ready** when the check times out, so a session that ignores `READY_CHECK` reads to the group as a declining member.

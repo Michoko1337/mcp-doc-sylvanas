@@ -370,12 +370,18 @@ Each entry contains:
 | `class_file` | `string` | Locale-independent class token, for example `"PALADIN"` |
 | `class_id` | `integer` | Numeric class id |
 | `object` | `game_object` or `nil` | The member's game object, `nil` when out of object range |
+| `is_on_taxi` | `boolean` or `nil` | Whether the member is on a flight path. Only in range: `nil` when the member is not visible (core 2.177+) |
+| `map_id` | `integer` or `nil` | UiMap the member is on, the world map's party dot. Works out of range, `nil` when unknown (core 2.177+) |
+| `map_x` | `number` or `nil` | Position on `map_id`, `0` to `1`. `nil` when the game hides it (core 2.177+) |
+| `map_y` | `number` or `nil` | Position on `map_id`, `0` to `1`. `nil` when the game hides it (core 2.177+) |
 
 Description
 
 Returns the full party roster, one entry per occupied slot.
 
 Unlike `get_party_frames`, this answers for members the client holds no object for. Everything except `object` comes from the unit token rather than from a loaded object, so a member an entire zone away still reports a name, a slot number, a role and a class. Only `object` requires the member to be in object range, and it is `nil` otherwise.
+
+`map_id`, `map_x` and `map_y` are the member's dot on the world map, so they answer at any distance, without an object. Turn them into world coordinates with [`core.game_ui.get_world_pos_from_map_pos`](/dev/api/game-ui). The game hides the position inside instances, and they are `nil` then. `is_on_taxi` is different: the game reads it from the loaded member, so it is `nil` out of range (unknown, not "not flying"). The four fields need core 2.177 or later; older cores leave them out (`nil`).
 
 Use `class_file` when branching on class. `class_name` is localized and will differ on a French or Chinese client, so comparing against it breaks for those users.
 
@@ -392,6 +398,15 @@ for _, member in ipairs(core.object_manager.get_party_members()) do
     else
         core.log(member.index .. ": " .. member.name .. " (" .. member.role .. ", "
             .. member.class_file .. ") out of range")
+    end
+end
+
+-- Where is an out-of-range member, and are they flying?
+for _, member in ipairs(core.object_manager.get_party_members()) do
+    if not member.object and member.map_x then
+        local world = core.game_ui.get_world_pos_from_map_pos(member.map_id,
+            vec2.new(member.map_x, member.map_y))
+        core.log(member.name .. " at " .. tostring(world))
     end
 end
 ```

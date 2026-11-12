@@ -471,6 +471,57 @@ end
 
 ---
 
+### `core.quests.is_unit_on_quest`
+
+Syntax
+
+```lua
+core.quests.is_unit_on_quest(unit: game_object, quest_id: integer) -> boolean
+```
+
+**Parameters**
+
+- `unit` : `game_object` - A party member in range, or the local player.
+- `quest_id` : `integer` - The quest ID to check.
+
+Returns
+
+- `boolean` : `true` when that unit is on the quest.
+
+Description
+
+Asks the game whether a party member (or you) is on a quest: the same answer the quest log uses to list party members on a quest. Needs core 2.176 or later.
+
+> [!DANGER]
+> - The game answers from the member's **loaded object** , so a party member out of object range always answers `false` , even when they have the quest.
+> - Only your own **party** counts: a raid member in another subgroup, or a random player next to you, always answers `false` .
+> - For a party member out of range, use [`core.addons.questie.get_party_quests`](/dev/api/addons) (needs Questie on both sides).
+> - You (the local player) are answered from your own quest log.
+
+> [!WARNING]
+> These clients only answer for quests in **your own** quest log, and a quest under a collapsed header answers `false`. WoW Forever and Retail answer for any quest ID.
+
+**Example Usage**
+
+```lua
+local QUEST_ID = 12345
+for _, member in ipairs(core.object_manager.get_party_members()) do
+    if member.object then
+        if core.quests.is_unit_on_quest(member.object, QUEST_ID) then
+            core.log(member.name .. " is on the quest")
+        end
+    else
+        -- out of range: the game cannot tell, ask Questie instead
+        local quests = core.addons.questie.get_party_quests(member.name)
+        if quests[QUEST_ID] then
+            core.log(member.name .. " is on the quest (Questie)")
+        end
+    end
+end
+```
+
+---
+
 ### `core.quests.get_quest_log_quest_ids`
 
 Syntax

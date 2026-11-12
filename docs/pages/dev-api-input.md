@@ -380,6 +380,25 @@ Returns: *boolean* - `true` when the client's pick-up call was reached, which is
 
 ---
 
+### `move_container_item(from_bag, from_slot, to_bag, to_slot)`
+
+Moves one bag item onto another bag slot: picks it up and drops it in the same call, so nothing else can touch the cursor in between. Use it to compact the bags where `sort_bags()` returns `false` (the Classic clients and the private servers). Needs core 2.200 or later: check `core.input.move_container_item` before calling it.
+
+Both pairs follow the same slot rule as `use_container_item`, **including an empty target**: `to_slot` is the 1-based slot in that bag **plus 1**. `inventory_helper` only lists slots that hold an item, so you build an empty slot's number yourself; without the +1 the drop lands one slot early. An empty target is a plain move. An occupied one does what a drag does: a swap, or a merge for a part stack of the same item.
+
+Returns: *boolean* - `true` when the client took the move. `false`, with the bags unchanged, when the source slot is empty, either slot is locked, the target is past the bag's size, or the two slots are the same. The server still confirms the move and both slots stay locked until `BAG_UPDATE`, so make one move per tick and read the bags again before the next.
+
+**Example Usage**
+
+```lua
+-- Move the item in the backpack's 5th slot to its empty 2nd slot (both slots: 1-based + 1)
+if core.input.move_container_item then
+    core.input.move_container_item(0, 5 + 1, 0, 2 + 1)
+end
+```
+
+---
+
 ### `delete_cursor_item()`
 
 Destroys whatever item is on the mouse cursor.
@@ -662,6 +681,31 @@ core.register_on_game_event_callback(function(event_name)
     end
 
     core.input.close_merchant()
+end)
+```
+
+---
+
+### `sort_bags()`
+
+Presses the bag window's **Clean Up Bags** button (the broom: "Auto-sorts your inventory to make room for new items"). The client sorts the backpack and bags and merges part stacks of the same item. Needs core 2.200 or later: on older cores `core.input.sort_bags` is `nil`, so check it before calling.
+
+Forever and Retail only. The Classic clients (Era, TBC, MoP, Titan) and the private servers have no bag sort: there it returns `false`.
+
+Returns: *boolean* - `true` when the sort was asked. It is not done yet: the items move over the next frames and `BAG_UPDATE` fires as they go, so read the bags again a moment later. The client does not always merge every part stack; merge what is left yourself if it matters.
+
+**Example Usage**
+
+```lua
+-- Tidy the bags once the merchant window has closed
+core.register_on_game_event_callback(function(event_name)
+    if event_name ~= "MERCHANT_CLOSED" then
+        return
+    end
+
+    if core.input.sort_bags then
+        core.input.sort_bags()
+    end
 end)
 ```
 
@@ -1311,6 +1355,25 @@ end
 
 ---
 
+### `dismiss_pet()`
+
+Dismisses your current pet, the same thing as "Dismiss" in the pet frame's menu or `/petdismiss`. This is the call for a pet that `abandon_pet()` refuses: a charmed creature, such as the beast from the hunter quest "Taming the Beast", or another temporary pet.
+
+Returns: *boolean* - `true` when the dismiss request was sent. `false`, with nothing done, when you have no pet or the game says it cannot be dismissed (the menu would not offer "Dismiss" either).
+
+It does exactly what the game's Dismiss button does: a tamed hunter pet is sent away with the Dismiss Pet spell (it comes back with Call Pet, nothing is lost; `false` if you do not know that spell yet), anything else is released directly. Needs core 2.185 or later.
+
+**Example Usage**
+
+```lua
+-- release the "Taming the Beast" quest beast
+if core.input.dismiss_pet() then
+    core.log("Dismiss request sent")
+end
+```
+
+---
+
 ### Loot and Object Interaction 🧹
 
 ### `loot_object(target, is_auto_loot)`
@@ -1564,6 +1627,97 @@ end
 
 ---
 
+### `join_rated_solo_shuffle()`
+
+Queues for rated Solo Shuffle, like the Join button on the Rated tab of the PvP window. You must be solo: the game has no group queue for Solo Shuffle.
+
+Returns:
+
+- *boolean* `ok` : `true` when the queue request was sent. The server can still refuse it.
+- *string* `message` : `""` on success, otherwise why not: `"solo shuffle is solo only, leave the group first"` , `"no solo shuffle on this client"` .
+
+```lua
+local ok, why = core.input.join_rated_solo_shuffle()
+if not ok then
+    core.log("solo shuffle: " .. why)
+end
+```
+
+> [!INFO]
+> On MoP, TBC, Titan, Classic Era and the private-server clients it returns `false, "no solo shuffle on this client"`.
+
+---
+
+### `join_skirmish(bracket?, join_as_group?)`
+
+Queues for an arena skirmish (unrated arena), like the game's own skirmish button. In a group, only the group leader can queue.
+
+Parameters:
+
+- **`bracket`** ( *integer, optional* ): team size, `2` , `3` or `5` . Required on TBC and Titan, ignored on Retail and Forever.
+- **`join_as_group`** ( *boolean, optional* ): TBC and Titan only. `true` queues your whole group, `false` or `nil` queues you alone.
+
+Returns:
+
+- *boolean* `ok` : `true` when the queue request was sent. The server can still refuse it.
+- *string* `message` : `""` on success, otherwise why not: `"bracket must be 2, 3 or 5"` , `"talk to an Arena Battlemaster first, its window must be open"` , `"only the group leader can queue"` , `"no arena skirmish on this client"` .
+
+Each game works differently:
+
+| Client | How it works |
+| --- | --- |
+| Retail, Forever | One skirmish queue, your group size sets the team size. `bracket` and `join_as_group` are ignored. |
+| TBC, Titan | `bracket` is required. The Arena Battlemaster window must be open (talk to the NPC first), as in the game. |
+| MoP | No skirmishes in that expansion. |
+| Classic Era | No arenas. |
+
+```lua
+-- TBC: 2v2 skirmish with my group, at the Arena Battlemaster
+local ok, why = core.input.join_skirmish(2, true)
+if not ok then
+    core.log("skirmish: " .. why)
+end
+```
+
+> [!INFO]
+> On MoP, Classic Era and the private-server Era client it returns `false, "no arena skirmish on this client"`.
+
+---
+
+### `join_arena(bracket?)`
+
+Queues for rated arena with your group, like the Join button in the PvP window. You must be the group leader. The server checks the rest (rating, arena team, gear).
+
+Parameters:
+
+- **`bracket`** ( *integer, optional* ): team size, `2` or `3` (MoP, TBC and Titan: also `5` ). Required on TBC and Titan.
+
+Returns:
+
+- *boolean* `ok` : `true` when the queue request was sent. The server can still refuse it.
+- *string* `message` : `""` on success, otherwise why not: `"bracket must be 2 or 3"` (or `"2, 3 or 5"` ), `"rated arena needs a group"` , `"this bracket needs a group of exactly N, the group has M"` , `"only the group leader can queue"` , `"talk to an Arena Battlemaster first, its window must be open"` , `"no rated arena on this client"` .
+
+Each game works differently:
+
+| Client | How it works |
+| --- | --- |
+| Retail, Forever | Brackets 2 and 3. The game picks the bracket from your group size, so `bracket` is only a check that the group has exactly that many players. `nil` uses the group as it is. |
+| MoP | Same as Retail, brackets 2, 3 and 5. |
+| TBC, Titan | `bracket` is required and needs your arena team for it. The Arena Battlemaster window must be open (talk to the NPC first), as in the game. |
+| Classic Era | No arenas. |
+
+```lua
+local ok, why = core.input.join_arena(3)
+if not ok then
+    core.log("arena: " .. why)
+end
+```
+
+> [!INFO]
+> On Classic Era and the private-server Era client it returns `false, "no rated arena on this client"`.
+
+---
+
 ### `clear_dungeon_selections(index)`
 
 Clears dungeon selections in the dungeon finder interface.
@@ -1797,6 +1951,7 @@ These are not notifications. The engine **holds the action and waits**, the same
 | Function | Answers | Confirm with |
 | --- | --- | --- |
 | `core.input.answer_group_invite(accept)` | `PARTY_INVITE_REQUEST` | `GROUP_ROSTER_UPDATE` |
+| `core.input.answer_invite_confirmation(accept)` | `GROUP_INVITE_CONFIRMATION` (core 2.190+) | `GROUP_ROSTER_UPDATE` |
 | `core.input.answer_guild_invite(accept)` | `GUILD_INVITE_REQUEST` | - |
 | `core.input.answer_duel(accept)` | `DUEL_REQUESTED` | `DUEL_FINISHED` |
 | `core.input.answer_resurrect(accept)` | `RESURRECT_REQUEST` | `PLAYER_ALIVE` |
@@ -1816,10 +1971,15 @@ Each takes a single boolean (except `accept_xp_loss`, which has no decline — r
 >
 > `answer_resurrect` and `release_spirit` / `resurrect_corpse` are different things. `answer_resurrect` answers another **player's** resurrect spell; the other two handle your own corpse.
 
+> [!NOTE]
+> `answer_group_invite` answers an invite **you** received. "X has requested to join your group" is a different prompt, `GROUP_INVITE_CONFIRMATION`: answer it with `answer_invite_confirmation`. That one also closes the popup, and the next pending request then shows the same way it does after a click. Read the request first with [`core.party.get_invite_confirmation`](/dev/api/party#corepartyget_invite_confirmation). Not on the private servers, whose clients do not have these requests. Needs core 2.190 or newer.
+
 ```lua
 core.register_on_game_event_callback(function(event_name, args)
     if event_name == "PARTY_INVITE_REQUEST" then
         core.input.answer_group_invite(false)       -- decline everything
+    elseif event_name == "GROUP_INVITE_CONFIRMATION" then
+        core.input.answer_invite_confirmation(false) -- nobody joins our group
     elseif event_name == "DUEL_REQUESTED" then
         core.input.answer_duel(false)
     elseif event_name == "RESURRECT_REQUEST" then

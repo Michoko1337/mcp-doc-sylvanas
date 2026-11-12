@@ -374,6 +374,9 @@ ROUND_ALL_CORNERS
 > [!NOTE]
 > Returns true if the mouse is hovering the specified bounds.
 
+> [!TIP]
+> It also answers while the window is not focused, as long as it is the window under the mouse (a window or popup drawn on top still wins). So the mouse wheel can scroll a menu without clicking it first. Clicks (`is_rect_clicked`, `is_rect_pressed`) still need the window to be focused. Same for `is_mouse_hovering_rect_block_movement`.
+
 ### Is Rect Clicked 📃
 
 `window:is_rect_clicked(rect_min, rect_max)`

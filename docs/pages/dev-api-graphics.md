@@ -991,14 +991,14 @@ Scales a size to match the current screen size based on a reference resolution.
 Syntax
 
 ```lua
-core.graphics.native_intersect(end_pos, start_pos, distance, hit_mask)
+core.graphics.native_intersect(start_pos, end_pos, distance, hit_mask)
 ```
 
 Parameters
 
-- `end_pos` : [vec3](/dev/api/vector-3) - The end position of the ray.
-- `start_pos` : [vec3](/dev/api/vector-3) - The start position of the ray.
-- `distance` (Optional): `number` - The maximum ray distance.
+- `start_pos` : [vec3](/dev/api/vector-3) - The ray origin. **Comes first.**
+- `end_pos` : [vec3](/dev/api/vector-3) - The far end of the ray.
+- `distance` (Optional): `number` - Ignored: the core always starts the trace at `1.0` . Pass `nil` .
 - `hit_mask` : `integer` - The hit mask flags for the intersection test. Same values as `trace_line` 's `flags` , see `enums.collision_flags` .
 
 Returns
@@ -1009,7 +1009,10 @@ Returns
 
 Description
 
-Performs a ray intersection test from the start position to the end position. Returns whether a hit occurred, the hit position, and the hit distance.
+Performs a ray intersection test from `start_pos` towards `end_pos`. Returns whether a hit occurred, the hit position, and the hit distance. The hit is the first surface met going from the first argument to the second.
+
+> [!CAUTION]
+> This page used to list the arguments as `(end_pos, start_pos, ...)`. That was wrong, the function never changed: the **first argument is the ray origin**. If you followed the old page and passed the end first, your ray ran backwards and the hit you got was the one nearest your intended end point.
 
 > [!WARNING]
 > Same rule as `trace_line`: `EntityRender` (`0x200000`) and higher crashed the 2.5.6 client, so those bits are refused with a Lua error on the Classic versions.

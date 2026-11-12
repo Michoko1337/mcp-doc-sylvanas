@@ -1,7 +1,7 @@
 {
   "source": "https://docs.project-sylvanas.net",
   "searchIndexUrl": "https://docs.project-sylvanas.net/search-index.json",
-  "frozenAt": "2026-10-30",
+  "frozenAt": "2026-11-12",
   "generatedBy": "tools/fetch-docs.mjs",
   "pages": [
     {
@@ -23,7 +23,7 @@
       "file": "dev-api-addons.md",
       "title": "Addon Integration Functions",
       "channel": "html",
-      "sections": 82
+      "sections": 98
     },
     {
       "url": "/dev/api/assets-helper",
@@ -37,7 +37,7 @@
       "file": "dev-api-auction-house.md",
       "title": "Auction House Functions",
       "channel": "html",
-      "sections": 47
+      "sections": 57
     },
     {
       "url": "/dev/api/auto-attack-helper",
@@ -79,7 +79,7 @@
       "file": "dev-api-core.md",
       "title": "Core Functions",
       "channel": "html",
-      "sections": 91
+      "sections": 92
     },
     {
       "url": "/dev/api/damage-meter",
@@ -142,7 +142,7 @@
       "file": "dev-api-game-object.md",
       "title": "Game Object - Functions",
       "channel": "html",
-      "sections": 132
+      "sections": 135
     },
     {
       "url": "/dev/api/game-object/examples",
@@ -156,7 +156,7 @@
       "file": "dev-api-game-ui.md",
       "title": "Game UI Functions",
       "channel": "html",
-      "sections": 86
+      "sections": 92
     },
     {
       "url": "/dev/api/geometry",
@@ -191,7 +191,7 @@
       "file": "dev-api-input.md",
       "title": "Input Functions and Spell Queue",
       "channel": "html",
-      "sections": 116
+      "sections": 122
     },
     {
       "url": "/dev/api/kick-external-filters",
@@ -240,14 +240,14 @@
       "file": "dev-api-party.md",
       "title": "Party Functions",
       "channel": "html",
-      "sections": 4
+      "sections": 5
     },
     {
       "url": "/dev/api/pet-battle",
       "file": "dev-api-pet-battle.md",
       "title": "Pet Battle Functions",
       "channel": "html",
-      "sections": 47
+      "sections": 48
     },
     {
       "url": "/dev/api/pet-handler",
@@ -282,7 +282,7 @@
       "file": "dev-api-quests.md",
       "title": "Quest Functions",
       "channel": "html",
-      "sections": 56
+      "sections": 57
     },
     {
       "url": "/dev/api/reputation",

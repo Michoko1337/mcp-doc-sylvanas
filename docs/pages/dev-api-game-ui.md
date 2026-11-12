@@ -921,6 +921,90 @@ See [`core.get_height_for_position`](/dev/api/core#coreget_height_for_position) 
 
 ---
 
+### `core.game_ui.set_user_waypoint`
+
+Syntax
+
+```lua
+core.game_ui.set_user_waypoint(ui_map_id: integer, x: number, y: number, super_track?: boolean) -> boolean
+```
+
+**Parameters**
+
+- `ui_map_id` : `integer` - The UiMap id, greater than 0.
+- `x` , `y` : `number` - The point on that map, 0 to 1.
+- `super_track` : `boolean` (optional) - Also make it the tracked target (the arrow on screen), like clicking the pin. Default `false` .
+
+Returns
+
+- `boolean` : `true` when the waypoint was set. `false` when the map does not allow one (a dungeon, for example) or the client has no user waypoint API.
+
+Description
+
+Puts the game's own user waypoint, the pin a player places with ctrl-click on the world map, at a point. It shows on the world map and the minimap, like TomTom or Zygor arrows. There is one per character, so it replaces the previous one. A map id of 0 or less, or `x` / `y` outside 0 to 1, raises a Lua error.
+
+> [!INFO]
+> Forever and Retail. The classic builds' API does not list a user waypoint: there it returns `false` and `get_user_waypoint` returns `nil`. Needs core 2.197 or later.
+
+**Example Usage**
+
+```lua
+-- Goldshire in Elwynn Forest
+if core.game_ui.set_user_waypoint(1429, 0.42, 0.65, true) then
+    core.log("waypoint set")
+end
+```
+
+---
+
+### `core.game_ui.clear_user_waypoint`
+
+Syntax
+
+```lua
+core.game_ui.clear_user_waypoint() -> boolean
+```
+
+Returns
+
+- `boolean` : `false` when the client has no user waypoint API.
+
+Description
+
+Removes the user waypoint. Needs core 2.197 or later.
+
+---
+
+### `core.game_ui.get_user_waypoint`
+
+Syntax
+
+```lua
+core.game_ui.get_user_waypoint() -> user_waypoint | nil
+```
+
+Returns
+
+- `user_waypoint` , or `nil` when there is none:
+  - `ui_map_id` ( *integer* )
+  - `x` , `y` ( *number* ): 0 to 1.
+  - `super_tracked` ( *boolean* ): It is the tracked target.
+
+Description
+
+Reads the user waypoint, whoever placed it: your plugin, the player or another addon. Needs core 2.197 or later.
+
+**Example Usage**
+
+```lua
+local wp = core.game_ui.get_user_waypoint()
+if wp then
+    core.log(string.format("waypoint on map %d at %.2f, %.2f", wp.ui_map_id, wp.x, wp.y))
+end
+```
+
+---
+
 ### `core.game_ui.get_map_at_position`
 
 Syntax
@@ -1143,6 +1227,41 @@ Converts a UI-space position to screen-space pixel coordinates.
 
 ---
 
+### `core.game_ui.get_minimap_info`
+
+Syntax
+
+```lua
+core.game_ui.get_minimap_info() -> table | nil
+```
+
+Returns
+
+- `table` : The minimap frame and its view.
+- `nil` : The game has no minimap frame, or it is not laid out yet.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `x` | `number` | Left edge of the minimap, screen pixels |
+| `y` | `number` | Top edge of the minimap, screen pixels |
+| `w` | `number` | Width, screen pixels |
+| `h` | `number` | Height, screen pixels |
+| `zoom` | `integer` | Zoom level, `0` (widest) to `5` |
+| `indoors` | `boolean` | The minimap is in its indoor mode (smaller view per zoom) |
+| `rotate` | `boolean` | "Rotate Minimap" is on |
+| `facing` | `number` | Your facing, in radians |
+| `radius_yd` | `number` | Yards from the centre to the edge at the current zoom and mode |
+
+Description
+
+Everything needed to draw marks on the minimap, without `core.execute`. Needs core 2.186 or newer.
+
+A world point `dx`, `dy` yards away from you is drawn at the minimap centre plus `(dx, dy) * (w / 2) / radius_yd` pixels. When `rotate` is on, rotate the offset by `-facing` first.
+
+`radius_yd` comes from the game where it has `C_Minimap.GetViewRadius` (Forever, Retail). Elsewhere it is the standard classic view size for the zoom: 150 to 25 yards indoors, 233.3 to 66.7 yards outdoors.
+
+---
+
 ### `core.game_ui.world_pos_to_map_pos_normalized`
 
 Syntax
@@ -1162,6 +1281,38 @@ Returns
 Description
 
 Converts a 3D world position to normalized map coordinates.
+
+---
+
+## Mouse Over UI 🖱️
+
+### `core.game_ui.is_mouse_over_ui`
+
+Syntax
+
+```lua
+core.game_ui.is_mouse_over_ui() -> boolean
+```
+
+Returns
+
+- `boolean` : `true` when the mouse is over a game or addon frame (bags, the character pane, an addon window), `false` over the 3D world.
+
+Description
+
+Capture the mouse only while this is `false`, so frames keep their clicks. Frames that ignore the mouse do not count. Works on every version. Needs core 2.197 or later.
+
+> [!TIP]
+> Each call runs one game Lua call. Read it once per frame and reuse the answer.
+
+**Example Usage**
+
+```lua
+core.register_on_update_callback(function()
+    local over_ui = core.game_ui.is_mouse_over_ui()
+    -- only handle world clicks while over_ui is false
+end)
+```
 
 ---
 
@@ -1243,14 +1394,19 @@ Returns
 | `is_usable` | `boolean` | Whether the item is usable by the player |
 | `item_id` | `integer` | The item ID |
 | `item_name` | `string` | The name of the item |
-| `quantity` | `integer` | The quantity available |
+| `quantity` | `integer` | The stack size of one purchase (how many items one buy gives you), not the merchant's stock |
 | `vendor_item_index` | `integer` | The vendor slot index |
+| `num_available` | `integer` or `nil` | The merchant's stock: `-1` unlimited, `0` sold out, `n` left. `nil` when the client does not answer (core 2.185+) |
+| `is_purchasable` | `boolean` or `nil` | Whether you can buy it. `nil` when the client does not answer (core 2.185+) |
 
 Description
 
 Retrieves detailed information about a specific vendor item. The `vendor_item_id` parameter is 1-indexed (internally adjusted to 0-indexed).
 
 Works on every client. `get_vendor_item_count` works everywhere too.
+
+> [!WARNING]
+> Both come from the merchant data (`numAvailable` and `isPurchasable` of the game's merchant item info) and are left out when the client does not answer them, or on cores older than 2.185. Check for `nil` before comparing: `info.num_available == 0` and `info.is_purchasable == false` are safe, while `info.num_available > 0` errors on `nil`.
 
 > [!NOTE]
 > Before the core update of 2026-10-06, every call on Retail and Forever returned `cost` `0`, `item_id` `0`, an empty `item_name` and `vendor_item_index` `0`, with no error, because those two clients no longer have the game function the core read. The core now reads their replacement.
@@ -1263,7 +1419,17 @@ for i = 1, count do
     local info = core.game_ui.get_vendor_item_info(i)
     local gold = math.floor(info.cost / 10000)
     local silver = math.floor((info.cost % 10000) / 100)
-    core.log(string.format("%s - %dg %ds (qty: %d)", info.item_name, gold, silver, info.quantity))
+    core.log(string.format("%s - %dg %ds (stack: %d)", info.item_name, gold, silver, info.quantity))
+end
+
+-- skip what you cannot buy
+for i = 1, count do
+    local info = core.game_ui.get_vendor_item_info(i)
+    if info.num_available == 0 or info.is_purchasable == false then
+        -- sold out or can't buy, skip
+    else
+        -- buy it
+    end
 end
 ```
 
@@ -1316,8 +1482,8 @@ Description
 
 Retrieves the position of the player's corpse as a 3D vector.
 
-> [!WARNING]
-> On Forever this currently answers `inf` for x and y, so check for `math.huge` before using it. A fix is coming in a later core update: it will read the same corpse marker the world map shows whenever the direct read fails. On that path the height (`z`) will be the ground below the corpse, or your own height when the area is too far away to be loaded yet, so treat `z` as approximate until you get close.
+> [!INFO]
+> Core 2.178 reads the corpse through the same game function the world map and minimap marker use, so it answers whenever the map shows your corpse, also after a relog. Older cores on Forever read the wrong function and answer `inf` for x and y (up to 1.60.1.70291), then `(0, 0, 0)` as a ghost.
 
 **Example Usage**
 
@@ -1570,6 +1736,34 @@ Retrieves information about the currently displayed tooltip. For an item under t
 local info = core.game_ui.get_tooltip_info()
 if info.type ~= "" then
     core.log(string.format("Tooltip: %s - %s (ID: %d)", info.type, info.name, info.id))
+end
+```
+
+---
+
+### `core.game_ui.get_item_ref_tooltip_info`
+
+Syntax
+
+```lua
+core.game_ui.get_item_ref_tooltip_info() -> item_ref_tooltip_info
+```
+
+Returns
+
+- `item_ref_tooltip_info` : The same fields as `get_tooltip_info` ( `type` is `"item"` , `"spell"` or `""` ), plus:
+  - `item_link` ( *string* ): The item's link when the tooltip shows an item, `""` otherwise.
+
+Description
+
+Reads the chat link tooltip (`ItemRefTooltip`), the one that opens when a player clicks a link in chat. It is empty (`type` `""`, `num_lines` 0, no `lines`) while that tooltip is hidden. With `item_link`, [`core.inventory.get_item_stats(link)`](/dev/api/core#coreinventoryget_item_stats) gives the exact random-suffix stats of an item linked in trade chat. Works on every version. Needs core 2.197 or later.
+
+**Example Usage**
+
+```lua
+local info = core.game_ui.get_item_ref_tooltip_info()
+if info.item_link ~= "" then
+    local stats = core.inventory.get_item_stats(info.item_link)
 end
 ```
 
@@ -2282,7 +2476,7 @@ Returns
 | --- | --- | --- |
 | `node_id` | `integer` | The node id |
 | `active_rank` | `integer` | Ranks currently active on the node |
-| `ranks_purchased` | `integer` | Ranks bought in the active config |
+| `ranks_purchased` | `integer` | Ranks bought in the active config. Can be `0` on a node whose ranks are active (seen on Forever): count with `active_rank` |
 | `max_ranks` | `integer` | Maximum ranks the node can hold |
 | `node_type` | `integer` | `0` single, `1` tiered, `2` selection |
 | `is_available` | `boolean` | The node's requirements are met |

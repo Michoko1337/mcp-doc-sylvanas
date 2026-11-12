@@ -1,7 +1,7 @@
 # Pitfalls & golden rules
 
 > **Community notes** curated by the maintainers of `mcp-sylvanas`, verified
-> against the official docs on **2026-10-30**. They are *not* part of the
+> against the official docs on **2026-11-12**. They are *not* part of the
 > official corpus (`docs/pages/`): they record contradictions between
 > official pages, wrong official examples, and API shapes that are easy to
 > get wrong. Each of them can cost an hour of debugging.
@@ -26,6 +26,10 @@
    *Retail only* and returns `nil` elsewhere; `cancel_buff` did nothing on
    Forever before the core update of 2026-10-06. Check the availability
    notes (`sylvanas_availability`) before depending on an API.
+7. **An API may only exist on recent cores.** Anything from core 2.173 on is
+   **absent** (`nil`, not a stub) on older cores, and calling it raises. Guard
+   with a truthiness check before calling:
+   `if core.input.sort_bags then core.input.sort_bags() end`.
 
 ## Verified gotchas in the official docs
 
@@ -121,6 +125,80 @@ if core.game_time() - last_cast_time < 250 then return false end  -- 250 ms
 local remaining_s = cd_info.duration - (core.game_time() - cd_info.start_time) / 1000
 ```
 
+### `core.spell_book.get_base_spell_id` — silent failure on private servers
+
+On the private-server clients only, it returns the input `spell_id` back — a
+**silent failure**; every Blizzard build resolves it since core 2.134.
+
+### `core.graphics.native_intersect` — the argument order was wrong
+
+The page listed `(end_pos, start_pos, distance, hit_mask)` until **2026-11-06**,
+then was corrected to **`(start_pos, end_pos, …)`**: the *first* argument is the
+ray origin. The function never changed — only the documentation did. Code
+written against the old page traced its ray backwards and reported the surface
+nearest the intended *end* point. `distance` is now documented as **ignored**
+(the core starts the trace at `1.0`), so pass `nil` there.
+
+### `get_vendor_item_info().quantity` is not the stock
+
+`quantity` is the **stack size of one purchase**, not what the merchant has
+left. The stock is `num_available` (`-1` unlimited, `0` sold out, `n` left) and
+`is_purchasable`, both **new in core 2.185 and both possibly `nil`** when the
+client does not answer. A guard written `if info.num_available > 0 then` errors
+on `nil`; `info.num_available == 0` and `info.is_purchasable == false` are safe.
+
+### `GROUP_INVITE_CONFIRMATION` is not `PARTY_INVITE_REQUEST`
+
+Two different prompts, two different answers:
+`core.input.answer_group_invite` answers an invite *you* received
+(`PARTY_INVITE_REQUEST`); "X has requested to join your group" is
+`GROUP_INVITE_CONFIRMATION` and needs
+`core.input.answer_invite_confirmation` (core 2.190+). Read the pending request
+with `core.party.get_invite_confirmation()` — not on the private servers.
+
+### `core.quests.is_unit_on_quest` — `false` does not mean "not on it"
+
+It answers from the member's **loaded object**: a party member out of object
+range always answers `false`, and a raid member in another subgroup does too.
+Two different questions share the answer `false` — "no" and "I cannot see them".
+For out-of-range members the docs point at
+`core.addons.questie.get_party_quests`, which requires Questie on both sides.
+
+### `use_toy` returns a boolean — but not the one you want
+
+Since core 2.200 `core.pet_battle.use_toy(item_id)` returns `true` when the
+client's toy call was **reached**, which is *not* the same as the toy going off.
+The client refuses a toy you do not own, one on cooldown, or one used while
+moving or casting, **without an error**. Check `player_has_toy` first. The toy
+calls are also the only part of `core.pet_battle` that works on Forever.
+
+### `core.game_ui.get_corpse_position` on Forever — fixed in core 2.178
+
+Older notes on Forever answered `inf` for x and y, then `(0, 0, 0)` as a ghost.
+Core 2.178 reads the same corpse marker the world map uses, so it answers
+whenever the map shows your corpse. Anything before that on Forever is unusable
+— do not carry a `math.huge` guard over as if it were still needed.
+
+### `core.auction_house.send_search_query` — search once, then refresh
+
+Since core 2.194/2.200, a repeated `send_search_query` can **stall the auction
+house**: no more results arrive until you switch the AH tab. The game's own
+window calls `has_search_results(item_id)` and then
+`refresh_commodity_search_results` / `refresh_item_search_results`; do the same
+(after `is_throttled_message_system_ready()`). And on the Classic versions the
+search still goes by item **name**, so nothing is sent while the game setting
+`loadDeprecationFallbacks` is off.
+
+### `send_search_query` now takes the item key
+
+`send_search_query()` used to take no arguments and read the configured
+parameters. It now takes
+`(item_id, item_level?, item_suffix?, separate_owner_items?, sorts?)`. The old
+zero-argument call no longer searches anything — and `get_item_info` answers
+nothing until the game has loaded the item, which is why a first search often
+came back with 0 rows. `send_browse_query(search_text)` (core 2.194+, modern AH
+clients only) resolves a name to the exact key instead.
+
 ### `nil` is not `false`
 
 `core.spell_book.is_important_spell(spell_id)` is *Retail only* and returns
@@ -145,6 +223,10 @@ a **silent failure**; every Blizzard build resolves it since core 2.134).
 - **`check_los` is `true` by default**: an opt-out, not an opt-in.
 - **`nil` is not `false`**: read the availability note before writing a
   `== false` guard.
+- **A new core may add an API *or* change its meaning.** `send_search_query`
+  gained five parameters; `get_vendor_item_info.quantity` changed definition;
+  `native_intersect`'s argument order was documented backwards. Re-read the
+  page, not just the symbol name, after a version change.
 - **Isolate thresholds in the menu** — that is the reference-rotation
   pattern, and it keeps the rotation testable.
 - **Short-circuit expensive calls** with a `cooldown_up()` check when the

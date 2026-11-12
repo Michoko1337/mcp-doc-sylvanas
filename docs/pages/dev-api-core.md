@@ -285,6 +285,36 @@ core.register_on_legit_spell_cast_callback(on_legit_spell_cast)
 > [!NOTE]
 > The "data" parameter is filled with the ID of the spell that was just casted. You can check the way this callback works by adding a core.log(tostring(data)) call inside the function called by the callback.
 
+---
+
+### `core.register_on_focus_changed_callback`
+
+Syntax
+
+```lua
+core.register_on_focus_changed_callback(callback: function)
+```
+
+**Parameters**
+
+- `callback` : `function(foremost: boolean)` - Called when the game window gains ( `true` ) or loses ( `false` ) the foreground.
+
+Description
+
+Called once each time you alt-tab out of the game or back in (or click another program). The core checks once per tick, before `on_pre_tick`, with the same test as `core.is_window_foremost()`, so you no longer need to poll it every tick. Needs core 2.187 or newer.
+
+It only fires on a change. Read the starting state with `core.is_window_foremost()` when your plugin loads.
+
+**Example Usage**
+
+```lua
+core.register_on_focus_changed_callback(function(foremost)
+    if not foremost then
+        -- the game lost focus: held movement keys are released by the game
+    end
+end)
+```
+
 ## Logging - An Important Tool 🔥
 
 ## Use Logs In Your Code!

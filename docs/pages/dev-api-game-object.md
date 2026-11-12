@@ -189,6 +189,13 @@ Retrieves the group role of the object:
 
 Returns the name of the object.
 
+### `get_surname() -> string`
+
+Returns the unit's surname, the second part of a WoW Forever character name. Empty string when the unit has none (NPCs, players without one).
+
+> [!INFO]
+> Needs core 2.174 or later. Every other game version returns `""`.
+
 ### `get_guid() -> string`
 
 Returns the unit's globally-unique GUID string (e.g. `"Player-970-0002FD41"`, `"Creature-0-..."`). Pair it with [`core.object_manager.get_object_from_guid`](/dev/api/object-manager) to resolve a stored GUID back into a live game object.
@@ -287,6 +294,12 @@ Returns whether the unit is swimming. Uses the game's own `IsSwimming`, on every
 
 Returns whether the unit is fully under water. Uses the game's own `IsSubmerged`. Needs core 2.135 or newer.
 
+### `is_on_taxi() -> boolean`
+
+Returns whether the unit is on a flight path (taxi). Uses the game's own `UnitOnTaxi`, for any unit, on every game version including the private servers. Returns `false` for anything that is not a unit. Needs core 2.186 or newer.
+
+Together with `is_flying` it tells a taxi from a flying mount, also where `get_movement_flags` returns `nil`.
+
 ### `is_rooted() -> boolean | nil`
 
 Returns whether the unit is rooted, for **any** unit, not just you. Needs core 2.135 or newer.
@@ -297,6 +310,9 @@ Returns whether the unit is rooted, for **any** unit, not just you. Needs core 2
 ### `get_movement_flags() -> integer | nil`
 
 The unit's raw movement flags, or `nil` when they cannot be read (same versions as `is_rooted`). Bits: `0x400` rooted, `0x800` falling, `0x100000` swimming, `0x1000000` flying. Needs core 2.135 or newer.
+
+> [!NOTE]
+> Always `nil` there for now. Use `is_flying`, `is_swimming`, `is_falling` and `is_on_taxi`, which ask the game itself.
 
 ### `is_auto_attacking() -> boolean`
 
@@ -496,6 +512,24 @@ Retrieves the bounding radius of the object.
 ### `get_combat_reach() -> number`
 
 Returns the combat reach of the unit.
+
+### `get_melee_reach(target) -> number`
+
+Returns the melee reach between this unit and `target`, in yards. It is the game's own melee range:
+
+```text
+max(5, my_combat_reach + its_combat_reach + 4/3)
+```
+
+from both units' CombatReach fields (the value `get_bounding_radius` returns). The target is in melee range when the centre-to-centre distance is below it. Units only. Needs core 2.186 or newer.
+
+```lua
+local me = core.object_manager.get_local_player()
+local in_melee = me:get_position():dist_to(target:get_position()) < me:get_melee_reach(target)
+```
+
+> [!TIP]
+> `core.spell_book.is_spell_in_range` answered "in range" for melee spells at 5.2 and 9.9 yards on TBC, where the server refused past 5.0.
 
 ### `get_height() -> number`
 

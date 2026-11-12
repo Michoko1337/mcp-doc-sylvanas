@@ -174,15 +174,34 @@ core.log("Total auctions scanned: " .. #items)
 Syntax
 
 ```lua
-core.auction_house.send_search_query() -> nil
+core.auction_house.send_search_query(item_id: integer, item_level?: integer, item_suffix?: integer, separate_owner_items?: boolean, sorts?: table) -> nil
 ```
+
+**Parameters**
+
+- `item_id` : `integer` - The item to search for.
+- `item_level` , `item_suffix` : `integer` (optional, default 0) - The exact item key, from `get_browse_result_info` .
+- `separate_owner_items` : `boolean` (optional, default `false` ) - List your own auctions separately.
+- `sorts` : `table` (optional, core 2.200+) - `{ { sort_order = 0..5, reverse = false }, ... }` , at most 6 entries. `sort_order` is `Enum.AuctionHouseSortOrder` : 0 Price, 1 Name, 2 Level, 3 Bid, 4 Buyout, 5 TimeRemaining (own auctions only).
 
 Description
 
-Sends a search query to the auction house based on the currently configured search parameters.
+Searches the auction house for one item. Results arrive with `COMMODITY_SEARCH_RESULTS_UPDATED` or `ITEM_SEARCH_RESULTS_UPDATED`; read them with the commodity or item search result functions below.
+
+Without `sorts`, core 2.200+ sends the sorts the game's own window sends: **no sort** for a commodity, Buyout then Bid for an item. Older cores always sent Price.
 
 > [!WARNING]
-> The Classic versions search by the item's name, which this looks up through the game's compatibility layer for old item functions. While the game setting `loadDeprecationFallbacks` is off, nothing is sent.
+> To search the same item again (a watch list), call `send_search_query` once, then `refresh_commodity_search_results` / `refresh_item_search_results` while `has_search_results` is `true`. That is what the game's own window does. Sending a new search every time can stall the auction house: no more results arrive until you switch the AH tab.
+
+> [!WARNING]
+> The Classic versions search by the item's name, which this looks up through the game's compatibility layer for old item functions. While the game setting `loadDeprecationFallbacks` is off, nothing is sent. `sorts` is ignored there.
+
+**Example Usage**
+
+```lua
+-- cheapest lots first, explicitly
+core.auction_house.send_search_query(2589, 0, 0, false, { { sort_order = 0 } })
+```
 
 ---
 
@@ -191,15 +210,82 @@ Sends a search query to the auction house based on the currently configured sear
 Syntax
 
 ```lua
-core.auction_house.send_sell_search_query() -> nil
+core.auction_house.send_sell_search_query(item_id: integer, item_level?: integer, item_suffix?: integer, separate_owner_items?: boolean, sorts?: table) -> nil
 ```
 
 Description
 
-Sends a search query for the sell tab, used to check current prices before posting an item.
+Sends a search query for the sell tab, used to check current prices before posting an item. Same arguments and default sorts as `send_search_query`.
 
 > [!WARNING]
-> Same search as `send_search_query`; `item_level`, `item_suffix` and `separate_owner_items` are ignored.
+> Same search as `send_search_query`; `item_level`, `item_suffix`, `separate_owner_items` and `sorts` are ignored.
+
+---
+
+### `core.auction_house.has_search_results`
+
+Syntax
+
+```lua
+core.auction_house.has_search_results(item_id: integer, item_level?: integer, item_suffix?: integer) -> boolean
+```
+
+Returns
+
+- `boolean` : Whether the client already holds search results for this item key. `false` on Classic versions.
+
+Description
+
+The check the game's window makes before it repeats a search. Needs core 2.200 or later.
+
+---
+
+### `core.auction_house.refresh_commodity_search_results`
+
+Syntax
+
+```lua
+core.auction_house.refresh_commodity_search_results(item_id: integer) -> boolean
+```
+
+Returns
+
+- `boolean` : `true` when sent. `false` on Classic versions.
+
+Description
+
+Asks for fresh results of a commodity you already searched, instead of sending a new search. Results arrive like a search's (`COMMODITY_SEARCH_RESULTS_UPDATED`, the same readers). It is throttled like any query, so still check `is_throttled_message_system_ready()`. Needs core 2.200 or later.
+
+**Example Usage**
+
+```lua
+local ah = core.auction_house
+if ah.is_throttled_message_system_ready() then
+    if ah.has_search_results(item_id) then
+        ah.refresh_commodity_search_results(item_id)
+    else
+        ah.send_search_query(item_id)
+    end
+end
+```
+
+---
+
+### `core.auction_house.refresh_item_search_results`
+
+Syntax
+
+```lua
+core.auction_house.refresh_item_search_results(item_id: integer, item_level?: integer, item_suffix?: integer) -> boolean
+```
+
+Returns
+
+- `boolean` : `true` when sent. `false` on Classic versions.
+
+Description
+
+The item (non-commodity) form of `refresh_commodity_search_results`. Needs core 2.200 or later.
 
 ---
 
@@ -351,6 +437,153 @@ Checks whether the full set of item search results has been received from the se
 
 > [!WARNING]
 > Always `true` on the Classic versions, where results arrive all at once.
+
+---
+
+## Name Search (Browse) Functions
+
+Search by name, the way the auction house's own search box does. Every result is an **exact item key** (`item_id`, `item_level`, `item_suffix`) that `send_search_query` takes as it is, so you no longer need `get_item_info` to answer first (it answers nothing until the game has loaded the item, which is why a first search often came back with 0 rows). Needs core 2.194 or newer.
+
+> [!WARNING]
+> Works where the game has the modern auction house: Forever, Retail and MoP Classic. On Classic Era, TBC Classic, Titan and the private servers, `send_browse_query` returns `false` and there are no results.
+
+### `core.auction_house.send_browse_query`
+
+Syntax
+
+```lua
+core.auction_house.send_browse_query(search_text: string, min_level?: integer, max_level?: integer) -> boolean
+```
+
+**Parameters**
+
+- `search_text` : `string` - Item name or part of it. Any text is safe to pass.
+- `min_level` : `integer` (optional) - Minimum required level. `0` or `nil` for none.
+- `max_level` : `integer` (optional) - Maximum required level. `0` or `nil` for none.
+
+Returns
+
+- `boolean` : `true` when the query was sent.
+
+Description
+
+Sends the same query as the search box: no filters, sorted by price then name. The results arrive with the `AUCTION_HOUSE_BROWSE_RESULTS_UPDATED` game event.
+
+---
+
+### `core.auction_house.get_num_browse_results`
+
+Syntax
+
+```lua
+core.auction_house.get_num_browse_results() -> integer
+```
+
+Returns
+
+- `integer` : Number of results received so far for the last browse.
+
+---
+
+### `core.auction_house.get_browse_result_info`
+
+Syntax
+
+```lua
+core.auction_house.get_browse_result_info(index: integer) -> table | nil
+```
+
+**Parameters**
+
+- `index` : `integer` - `1` to `get_num_browse_results()` .
+
+Returns
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `item_id` | `integer` | Item key: item id |
+| `item_level` | `integer` | Item key: exact item level |
+| `item_suffix` | `integer` | Item key: suffix |
+| `battle_pet_species_id` | `integer` | Item key: battle pet species, `0` for items |
+| `total_quantity` | `integer` | Units listed across every auction of this key |
+| `min_price` | `number` | Lowest buyout, in copper |
+| `contains_owner_item` | `boolean` | One of the listings is yours |
+
+`nil` when the index is out of range.
+
+---
+
+### `core.auction_house.has_full_browse_results`
+
+Syntax
+
+```lua
+core.auction_house.has_full_browse_results() -> boolean
+```
+
+Returns
+
+- `boolean` : `false` while the server still has more results for the last browse.
+
+---
+
+### `core.auction_house.request_more_browse_results`
+
+Syntax
+
+```lua
+core.auction_house.request_more_browse_results() -> boolean
+```
+
+Returns
+
+- `boolean` : `true` when the call was reached.
+
+Description
+
+Asks for the next page of the last browse. It arrives with the `AUCTION_HOUSE_BROWSE_RESULTS_ADDED` game event; read it again with `get_browse_result_info`.
+
+---
+
+### `core.auction_house.get_detailed_item_level`
+
+Syntax
+
+```lua
+core.auction_house.get_detailed_item_level(item_link: string) -> integer | nil
+```
+
+**Parameters**
+
+- `item_link` : `string` - An item link, for example from `get_replicate_item_link` .
+
+Returns
+
+- `integer` : The exact effective item level of that item.
+- `nil` : The game cannot read the link.
+
+Description
+
+Reads the item level from the link itself (upgrades and bonuses included), so it works even when the item is not loaded yet. Use it as `item_level` in `send_search_query`. Works on every game version.
+
+**Example Usage**
+
+```lua
+-- Find an item by name, then search its exact key
+core.auction_house.send_browse_query("Copper Ore")
+
+core.register_on_game_event_callback(function(event_name)
+    if event_name ~= "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED" then return end
+    for i = 1, core.auction_house.get_num_browse_results() do
+        local r = core.auction_house.get_browse_result_info(i)
+        if r then
+            core.log(r.item_id .. " ilvl " .. r.item_level .. " min " .. r.min_price)
+            core.auction_house.send_search_query(r.item_id, r.item_level, r.item_suffix)
+            break
+        end
+    end
+end)
+```
 
 ---
 

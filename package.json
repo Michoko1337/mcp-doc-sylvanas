@@ -17,7 +17,7 @@
     "selftest": "node dist/index.js --selftest",
     "test": "node tools/protocol-test.mjs",
     "pretest:unit": "npm run build",
-    "test:unit": "node --test test/",
+    "test:unit": "node --test test/text.test.mjs test/search.test.mjs test/availability.test.mjs test/html-to-markdown.test.mjs test/indexer.test.mjs",
     "test:all": "npm run test:unit && npm test",
     "fetch-docs": "node tools/fetch-docs.mjs",
     "inspect": "node tools/inspect-symbols.mjs",

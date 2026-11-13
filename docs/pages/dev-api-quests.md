@@ -127,7 +127,10 @@ core.quests.confirm_accept_quest() -> nil
 
 Description
 
-Confirms quest acceptance for escort-type quests that require an additional confirmation step before starting.
+Answers Yes to the party quest popup, "Jose is starting Homeward Bound. Would you like to as well?", which a group member gets when another one takes an escort or party quest. The quest is accepted (`QUEST_ACCEPTED` follows) and the popup closes, as its own Yes button does. Does nothing when no such popup is pending.
+
+> [!NOTE]
+> Before core 2.206 the quest was accepted but the popup stayed on screen until it was clicked away.
 
 ---
 

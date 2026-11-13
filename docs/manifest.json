@@ -1,7 +1,7 @@
 {
   "source": "https://docs.project-sylvanas.net",
   "searchIndexUrl": "https://docs.project-sylvanas.net/search-index.json",
-  "frozenAt": "2026-11-12",
+  "frozenAt": "2026-11-13",
   "generatedBy": "tools/fetch-docs.mjs",
   "pages": [
     {
@@ -52,6 +52,13 @@
       "title": "Buffs",
       "channel": "html",
       "sections": 7
+    },
+    {
+      "url": "/dev/api/chat",
+      "file": "dev-api-chat.md",
+      "title": "Chat and Ignore List",
+      "channel": "html",
+      "sections": 11
     },
     {
       "url": "/dev/api/color",
@@ -212,7 +219,7 @@
       "file": "dev-api-login.md",
       "title": "Login Functions",
       "channel": "html",
-      "sections": 28
+      "sections": 29
     },
     {
       "url": "/dev/api/mail",

@@ -422,8 +422,11 @@ end)
 | `CHAT_MSG_COMBAT_XP_GAIN` | `text` |
 | `CHAT_MSG_PARTY` | `text`, `sender`, `language_name`, `channel_name`, … — the client's own arguments |
 | `CHAT_MSG_PARTY_LEADER` | same as `CHAT_MSG_PARTY`, for a line written by the party leader |
+| `IGNORELIST_UPDATE` | none. The ignore list changed (core 2.211+), see [Chat and Ignore List](/dev/api/chat) |
 | `UI_ERROR_MESSAGE` | `error_type`, `message`, `string_id` |
 | `UI_INFO_MESSAGE` | `message_type`, `message`, `string_id` |
+
+Every `CHAT_MSG_*` event carries all of the client's arguments, not only the ones listed: `args[11]` is the chat line id ([Chat and Ignore List](/dev/api/chat)) and `args[12]` the sender's GUID.
 
 `error_type` is a number that changes between game versions and `message` is in the player's language. `string_id` is the game's own name for the message, such as `"ERR_USE_TOO_FAR"`, and is the same on every version, so compare against that. It is `nil` on a client too old to provide it.
 

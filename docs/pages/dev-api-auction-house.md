@@ -182,13 +182,13 @@ core.auction_house.send_search_query(item_id: integer, item_level?: integer, ite
 - `item_id` : `integer` - The item to search for.
 - `item_level` , `item_suffix` : `integer` (optional, default 0) - The exact item key, from `get_browse_result_info` .
 - `separate_owner_items` : `boolean` (optional, default `false` ) - List your own auctions separately.
-- `sorts` : `table` (optional, core 2.200+) - `{ { sort_order = 0..5, reverse = false }, ... }` , at most 6 entries. `sort_order` is `Enum.AuctionHouseSortOrder` : 0 Price, 1 Name, 2 Level, 3 Bid, 4 Buyout, 5 TimeRemaining (own auctions only).
+- `sorts` : `table` (optional, core 2.201+) - `{ { sort_order = 0..5, reverse = false }, ... }` , at most 6 entries. `sort_order` is `Enum.AuctionHouseSortOrder` : 0 Price, 1 Name, 2 Level, 3 Bid, 4 Buyout, 5 TimeRemaining (own auctions only).
 
 Description
 
 Searches the auction house for one item. Results arrive with `COMMODITY_SEARCH_RESULTS_UPDATED` or `ITEM_SEARCH_RESULTS_UPDATED`; read them with the commodity or item search result functions below.
 
-Without `sorts`, core 2.200+ sends the sorts the game's own window sends: **no sort** for a commodity, Buyout then Bid for an item. Older cores always sent Price.
+Without `sorts`, core 2.201+ sends the sorts the game's own window sends: **no sort** for a commodity, Buyout then Bid for an item. Older cores always sent Price.
 
 > [!WARNING]
 > To search the same item again (a watch list), call `send_search_query` once, then `refresh_commodity_search_results` / `refresh_item_search_results` while `has_search_results` is `true`. That is what the game's own window does. Sending a new search every time can stall the auction house: no more results arrive until you switch the AH tab.
@@ -236,7 +236,7 @@ Returns
 
 Description
 
-The check the game's window makes before it repeats a search. Needs core 2.200 or later.
+The check the game's window makes before it repeats a search. Needs core 2.201 or later.
 
 ---
 
@@ -254,7 +254,7 @@ Returns
 
 Description
 
-Asks for fresh results of a commodity you already searched, instead of sending a new search. Results arrive like a search's (`COMMODITY_SEARCH_RESULTS_UPDATED`, the same readers). It is throttled like any query, so still check `is_throttled_message_system_ready()`. Needs core 2.200 or later.
+Asks for fresh results of a commodity you already searched, instead of sending a new search. Results arrive like a search's (`COMMODITY_SEARCH_RESULTS_UPDATED`, the same readers). It is throttled like any query, so still check `is_throttled_message_system_ready()`. Needs core 2.201 or later.
 
 **Example Usage**
 
@@ -285,7 +285,7 @@ Returns
 
 Description
 
-The item (non-commodity) form of `refresh_commodity_search_results`. Needs core 2.200 or later.
+The item (non-commodity) form of `refresh_commodity_search_results`. Needs core 2.201 or later.
 
 ---
 

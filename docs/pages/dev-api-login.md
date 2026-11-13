@@ -322,6 +322,34 @@ Reconnects after a disconnect. Check `core.login.is_reconnect_possible()` first;
 
 ---
 
+### `core.login.clear_reconnect`
+
+Syntax
+
+```lua
+core.login.clear_reconnect() -> boolean, string
+```
+
+Description
+
+Presses the reconnect panel's other button (the one next to **Reconnect**, "Switch Accounts" or "Log Out" depending on the client): the client forgets the reconnect and shows the email and password boxes again, so you can sign in with a different login. Needs core 2.210 or later.
+
+Login screen only, and only while `core.login.is_reconnect_possible()` is `true`; otherwise it returns `false` and a message saying why. `true` means the client no longer offers a reconnect.
+
+**Example Usage**
+
+```lua
+-- Sign in with another account instead of reconnecting the last one
+if core.login.is_reconnect_possible() then
+    local ok, message = core.login.clear_reconnect()
+    if not ok then
+        core.log("clear_reconnect: " .. message)
+    end
+end
+```
+
+---
+
 ### `core.login.disconnect`
 
 Syntax

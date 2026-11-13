@@ -9,7 +9,7 @@ The `core.pet_battle` module provides functions for interacting with the WoW pet
 > [!WARNING]
 > Every function on this page works on Retail only. On every Classic version, MoP Classic included even though it has pet battles in game, the readers return `false`, `0` or empty values and the actions (abilities, swaps, summons) silently do nothing.
 >
-> The two toy calls are the exception: since core 2.200 they also work on Forever, which has a Toy Box.
+> The two toy calls are the exception: since core 2.203 they also work on Forever, which has a Toy Box.
 
 ---
 
@@ -1094,7 +1094,7 @@ Summons a pet as a companion by its GUID. This is the non-combat companion pet t
 
 ## Toys
 
-Retail and Forever (Forever needs core 2.200 or later). Clients without a Toy Box (Classic Era, TBC, MoP, the private servers) answer `false`.
+Retail and Forever (Forever needs core 2.203 or later). Clients without a Toy Box (Classic Era, TBC, MoP, the private servers) answer `false`.
 
 ### `core.pet_battle.player_has_toy`
 
@@ -1132,7 +1132,7 @@ core.pet_battle.use_toy(item_id: integer) -> boolean
 
 Returns
 
-- `boolean` : `true` when the client's toy call was reached, which is **not** the same as the toy going off. Before core 2.200 it returned nothing.
+- `boolean` : `true` when the client's toy call was reached, which is **not** the same as the toy going off. Before core 2.203 it returned nothing.
 
 Description
 

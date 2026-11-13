@@ -218,6 +218,12 @@ Description
 >
 > This is the same on every game version, and intended: it is what makes log-style files work. Earlier versions of this page said it "overwrites the file in most systems", which was wrong.
 
+> [!INFO]
+> - The call returns at once. One background writer does the append, in call order per file.
+> - `core.read_data_file` , `core.read_data_file_partial` , `core.get_data_file_size` , `core.create_data_file` and `core.delete_data_file` on the same file, and `core.read_dir` , first wait for that file's queued appends, so a read right after a write sees the data.
+> - Older cores wrote on the game thread: one slow disk write could freeze the client for seconds.
+> - Another program reading the file may see it before the append lands.
+
 **Example Usage**
 
 ```lua
@@ -500,6 +506,12 @@ Writes a message to a log file. Use this for debug output that should persist ou
 
 > [!NOTE]
 > Whether a newline is automatically appended depends on native implementation. If you want one, include `"\n"` yourself.
+
+> [!INFO]
+> - The call returns at once. One background writer does the append, in call order per file.
+> - `core.create_log_file` , `core.delete_log_file` , `core.delete_log_folder` and `core.read_log_dir` first wait for the queued appends, so they never race a pending write.
+> - Older cores wrote on the game thread: one slow disk write could freeze the client for seconds.
+> - Another program reading the file may see it before the append lands.
 
 **Example Usage**
 

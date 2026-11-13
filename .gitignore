@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Compiled output (npm run build)
+dist/
+
+# Site cache used by tools/fetch-docs.mjs (regenerable)
+.cache/
+
+# Tool output
+raw/
+
+# Logs & OS noise
+*.log
+.DS_Store
+Thumbs.db

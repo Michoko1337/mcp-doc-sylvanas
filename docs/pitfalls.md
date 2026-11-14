@@ -125,6 +125,37 @@ if core.game_time() - last_cast_time < 250 then return false end  -- 250 ms
 local remaining_s = cd_info.duration - (core.game_time() - cd_info.start_time) / 1000
 ```
 
+### `get_spell_cooldown` is the time LEFT, not the cooldown's length
+
+| Form | Where |
+|---|---|
+| "the cooldown duration of the specified spell in seconds" | the spell book page (documented function) |
+| a number logged as "Remaining … CD" | the `/dev/api/core` page (logging tip) |
+| a number compared with `> 0` or `> 2.0` | the `examples-izi-icons-example-izi` and `examples-legacy-icons-example` spell bars, the PvP UI mini-lib |
+| a table, `cd_info.remaining > 0` | the spell helper page ("5. Debugging Checklist") |
+
+`core.spell_book.get_spell_cooldown(spell_id)` returns a **number**: the
+seconds **left** on the cooldown, `0` when the spell is ready. Despite the spell
+book page's "cooldown duration", it never gives the cooldown's full length, so
+a ready spell's length cannot be read from it. And the debugging checklist's
+`cd_info.remaining` indexes a number, which raises.
+
+The full length is `get_spell_cooldown_information(spell_id).duration`
+(seconds), but only while the spell's own cooldown runs: observed in game, a
+ready spell's record carries no length, and during the global cooldown it can
+carry the GCD's length. `get_spell_base_cooldown(spell_id)` returns a **table**
+whose `cooldown_ms` is the length in **milliseconds**, before haste, talents and
+other modifiers (`0` when the client does not expose it).
+
+Corrected forms:
+
+```lua
+-- on cooldown?
+local on_cd = core.spell_book.get_spell_cooldown(spell_id) > 0
+-- base length, before haste and talents
+local base_s = core.spell_book.get_spell_base_cooldown(spell_id).cooldown_ms / 1000
+```
+
 ### `core.spell_book.get_base_spell_id` — silent failure on private servers
 
 On the private-server clients only, it returns the input `spell_id` back — a

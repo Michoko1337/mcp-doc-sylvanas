@@ -41,6 +41,8 @@ Server search/reliability fixes, unit tests, and a documentation corpus refresh.
 - `docs/pitfalls.md` re-verified against the new pages: 9 new gotchas, a new
   golden rule about recent-core APIs, and a warning about APIs whose *meaning*
   changed between cores.
+- `docs/pitfalls.md`: new gotcha — `get_spell_cooldown` answers the time left,
+  not the cooldown's length; the official pages disagree on its shape.
 
 ### Added (upstream pages)
 
